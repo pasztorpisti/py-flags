@@ -1,0 +1,14 @@
+/.eggs/
+/.idea/
+/build/
+/dist/
+/src/py_flags.egg-info/
+
+
+/.coverage
+/htmlcov/
+
+/README.html
+/CHANGES.html
+
+*.py[cod]
