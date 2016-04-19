@@ -249,9 +249,12 @@ class FlagsMeta(type):
                                "'%s.%s'" % (class_dict['__module__'], class_name))
         class_dict['__slots__'] = ()
 
+        def create_flags_class(custom_class_dict=None):
+            return super(FlagsMeta, mcs).__new__(mcs, class_name, bases, custom_class_dict or class_dict)
+
         if Flags is None:
             # This __new__ call is creating Flags.
-            return super().__new__(mcs, class_name, bases, class_dict)
+            return create_flags_class()
 
         # We don't allow more than one base classes that are derived from Flags.
         flags_bases = [base for base in bases if issubclass(base, Flags)]
@@ -263,10 +266,7 @@ class FlagsMeta(type):
             raise RuntimeError("You can't subclass %r because it has already defined flag members" % (flags_bases[0],))
 
         if not member_definitions:
-            return super().__new__(mcs, class_name, bases, class_dict)
-
-        def create_flags_class(custom_class_dict):
-            return super(FlagsMeta, mcs).__new__(mcs, class_name, bases, custom_class_dict)
+            return create_flags_class()
 
         return _create_flags_class_with_members(class_name, class_dict, member_definitions, create_flags_class)
 
