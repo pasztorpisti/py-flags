@@ -160,7 +160,7 @@ def _initialize_class_dict_and_create_flags_class(class_dict, class_name, create
             raise TypeError('Flag bits should be an int but it is %r' % (properties.bits,))
         if not special and properties.bits == 0:
             raise ValueError("Flag '%s' has the invalid value of zero" % properties.name)
-        member = _internal_instantiate_flags(flags_class, properties.bits)
+        member = flags_class(properties.bits)
         if member.bits != properties.bits:
             raise RuntimeError("%s.__init__ has altered the assigned bits of member '%s' from %r to %r" % (
                 class_name, properties.name, properties.bits, member.bits))
@@ -228,20 +228,6 @@ def _create_flags_class_with_members(class_name, class_dict, member_definitions,
     return flags_class
 
 
-_INTERNAL_FLAGS_INSTANTIATION_MAGIC_PARAM_NAME = 'internal_flags_instantiation_magic'
-
-
-def _internal_instantiate_flags(flags_class, *args, **kwargs):
-    """
-    Flags classes should be instantiated only internally by this library by using this function.
-    Instantiation happens only in two cases:
-    1. When the Flags class is being created its members are instantiated as instances of Flags.
-    2. Performing arithmetic with Flags instances create other Flags instances (e.g. MyFlags.flag0 | MyFlags.flag1).
-    """
-    kwargs[_INTERNAL_FLAGS_INSTANTIATION_MAGIC_PARAM_NAME] = True
-    return flags_class(*args, **kwargs)
-
-
 class FlagsMeta(type):
     def __new__(mcs, class_name, bases, class_dict):
         if '__slots__' in class_dict:
@@ -271,15 +257,34 @@ class FlagsMeta(type):
         return _create_flags_class_with_members(class_name, class_dict, member_definitions, create_flags_class)
 
     def __call__(cls, *args, **kwargs):
-        if kwargs.pop(_INTERNAL_FLAGS_INSTANTIATION_MAGIC_PARAM_NAME, False):
-            # We have to instantiate the Flags class.
-            # This happens when the Flags class is being created along with its members that
-            # are Flags instances and also when arithmetic is being performed on the FLags instances.
-            return super().__call__(*args, **kwargs)
+        if kwargs or len(args) >= 2:
+            # The Flags class or one of its subclasses was "called" as a
+            # utility function to create a subclass of the called class.
+            return _create_flags_subclass(cls, *args, **kwargs)
 
-        # The Flags class or one of its subclasses was "called" as a
-        # utility function to create a subclass of the called class.
-        return _create_flags_subclass(cls, *args, **kwargs)
+        # We have to instantiate the Flags class from a value (bits, str, etc...)
+        if not args:
+            # MyFlags(). Directly instantiating a flags class without __init__ parameters.
+            # This results in the zero flag.
+            # TODO: optimize this out, make sure that there is a no_flags instance
+            # somewhere even if the user specified __no_flags_name__=None on the class.
+            # In that case we can simply return something like cls.no_flags here.
+            return super().__call__(0)
+
+        # The following part is a possible good candidate for caching and manual optimization for special
+        # cases (for example when the bits exactly match all_flags or another defined member...)
+
+        # value has to be an int, str, or cls instance.
+        value = args[0]
+
+        if type(value) is cls:
+            # cls was called with an exact instance of cls as its parameter
+            return value
+        if isinstance(value, int):
+            return super().__call__(value)
+        if isinstance(value, str):
+            return super().__call__(cls.bits_from_str(value))
+        raise TypeError("Can't instantiate %s from value %r" % (cls.__name__, value))
 
     @classmethod
     def __prepare__(cls, class_name, bases):
@@ -354,6 +359,12 @@ class FlagsArithmeticMixin:
             return False
         return (item.__bits & self.__bits) == item.__bits
 
+    def __create_flags_instance(self, bits):
+        # optimization, exploiting immutability
+        if bits == self.__bits:
+            return self
+        return type(self)(bits)
+
     def __generate_comparison_operator(operator_):
         def comparison_operator(self, other):
             if type(other) is not type(self):
@@ -366,7 +377,7 @@ class FlagsArithmeticMixin:
         def arithmetic_operator(self, other):
             if type(other) is not type(self):
                 return NotImplemented
-            return _internal_instantiate_flags(type(self), operator_(self.__bits, other.__bits))
+            return self.__create_flags_instance(operator_(self.__bits, other.__bits))
         arithmetic_operator.__name__ = operator_.__name__
         return arithmetic_operator
 
@@ -378,7 +389,7 @@ class FlagsArithmeticMixin:
         if type(other) is not type(self):
             return NotImplemented
         bits = self.__bits ^ (self.__bits & other.__bits)
-        return _internal_instantiate_flags(type(self), bits)
+        return self.__create_flags_instance(bits)
 
     __eq__ = __generate_comparison_operator(operator.__eq__)
     __ne__ = __generate_comparison_operator(operator.__ne__)
@@ -388,8 +399,7 @@ class FlagsArithmeticMixin:
     __lt__ = __generate_comparison_operator(operator.__lt__)
 
     def __invert__(self):
-        cls = type(self)
-        return _internal_instantiate_flags(cls, self.__bits ^ cls.__all_bits__)
+        return self.__create_flags_instance(self.__bits ^ type(self).__all_bits__)
 
 
 # This is used by FlagsBaseMeta to detect whether the currently created class is FlagsBase.
@@ -452,8 +462,15 @@ class Flags(FlagsArithmeticMixin, metaclass=FlagsMeta):
     def __hash__(self):
         return self.bits ^ hash(type(self))
 
+    __safe_for_unpickling__ = True
+
     def __reduce_ex__(self, proto):
-        return _unpickle_flags_instance, (type(self), self.bits)
+        return type(self), (self.bits,)
+
+    @classmethod
+    def bits_from_str(cls, s):
+        # TODO
+        return 42
 
     def __str__(self):
         properties = self.properties
@@ -479,10 +496,3 @@ class CustomFlags(Flags):
         for properties in flag_properties_list:
             properties.bits = properties.data
         return flag_properties_list
-
-
-# It isn't desirable and possible to create new flags class member instances. Instead of
-# doing so pickling has to retrieve/lookup already existing flags class members by name.
-def _unpickle_flags_instance(flags_class, bits):
-    return _internal_instantiate_flags(flags_class, bits)
-_unpickle_flags_instance.__safe_for_unpickling__ = True
