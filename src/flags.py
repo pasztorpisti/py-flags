@@ -137,18 +137,20 @@ def _initialize_class_dict_and_create_flags_class(class_dict, class_name, create
 
     flags_class = create_flags_class(class_dict)
 
-    def instantiate_member(properties):
+    def instantiate_member(properties, special):
         if not isinstance(properties.name, str):
             raise TypeError('Flag name should be an str but it is %r' % (properties.name,))
         if not isinstance(properties.bits, int):
             raise TypeError('Flag bits should be an int but it is %r' % (properties.bits,))
+        if not special and properties.bits == 0:
+            raise ValueError("Flag '%s' has the invalid value of zero" % properties.name)
         member = _internal_instantiate_flags(flags_class, properties.bits)
         if member.bits != properties.bits:
             raise RuntimeError("%s.__init__ has altered the assigned bits of member '%s' from %r to %r" % (
                 class_name, properties.name, properties.bits, member.bits))
         return member
 
-    def add_member(member, properties, special_member):
+    def add_member(member, properties, special):
         # special members (like no_flags, and all_flags) have no index
         # and they appear only in the __all_members__ collection.
         if all_members.setdefault(properties.name, member) is not member:
@@ -156,7 +158,7 @@ def _initialize_class_dict_and_create_flags_class(class_dict, class_name, create
 
         properties.index = None
         properties.index_without_aliases = None
-        if not special_member:
+        if not special:
             properties.index = len(members)
             members[properties.name] = member
             properties_for_bits = bits_to_properties.setdefault(properties.bits, properties)
@@ -171,7 +173,7 @@ def _initialize_class_dict_and_create_flags_class(class_dict, class_name, create
             properties.readonly = True
 
     def instantiate_and_add_member(properties, special_member=False):
-        member = instantiate_member(properties)
+        member = instantiate_member(properties, special_member)
         add_member(member, properties, special_member)
 
     return flags_class, instantiate_and_add_member
