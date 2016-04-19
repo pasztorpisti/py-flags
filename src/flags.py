@@ -253,7 +253,7 @@ class FlagsMeta(type):
             # This __new__ call is creating Flags.
             return super().__new__(mcs, class_name, bases, class_dict)
 
-        # We don't allow more than one base classes that are derived from FlagsBase.
+        # We don't allow more than one base classes that are derived from Flags.
         flags_bases = [base for base in bases if issubclass(base, Flags)]
         if len(flags_bases) >= 2:
             raise RuntimeError("Your flags class can derive at most from one other FlagsBase subclass.")
