@@ -478,31 +478,73 @@ class Flags(FlagsArithmeticMixin, metaclass=FlagsMeta):
     def __hash__(self):
         return self.bits ^ hash(type(self))
 
-    __safe_for_unpickling__ = True
-
     def __reduce_ex__(self, proto):
-        return type(self), (self.bits,)
-
-    @classmethod
-    def bits_from_str(cls, s):
-        # TODO
-        return 42
+        return type(self), (self.to_simple_str(),)
 
     def __str__(self):
+        # Warning: The output of this method has to be a string that can be processed by bits_from_str
         properties = self.properties
         if properties is None:
             # this is a set of flags as a result of arithmetic
-            flag_set = '|'.join(member.name for member in self)
-            return '%s(%s)' % (type(self).__name__, flag_set)
+            return '%s(%s)' % (type(self).__name__, self.to_simple_str())
         return '%s.%s' % (type(self).__name__, properties.name)
 
     def __repr__(self):
         properties = self.properties
         if properties is None:
             # this is a set of flags as a result of arithmetic
-            flag_set = '|'.join(member.name for member in self)
-            return '<%s(%s) bits=0x%04X>' % (type(self).__name__, flag_set, self.bits)
+            return '<%s(%s) bits=0x%04X>' % (type(self).__name__, self.to_simple_str(), self.bits)
         return '<%s.%s bits=0x%04X data=%r>' % (type(self).__name__, properties.name, properties.bits, properties.data)
+
+    def to_simple_str(self):
+        return '|'.join(member.name for member in self)
+
+    @classmethod
+    def from_simple_str(cls, s):
+        return cls(cls.bits_from_simple_str(s))
+
+    @classmethod
+    def from_str(cls, s):
+        if not isinstance(s, str):
+            raise TypeError("Expected an str instance, received %r" % (s,))
+        return cls(s)
+
+    @classmethod
+    def bits_from_simple_str(cls, s):
+        member_names = (name.strip() for name in s.split('|'))
+        member_names = filter(None, member_names)
+        bits = 0
+        for member_name in filter(None, member_names):
+            member = cls.__all_members__.get(member_name)
+            if member is None:
+                raise ValueError("%s.%s: Invalid flag name '%s' in string %r" % (
+                    cls.__name__, cls.bits_from_simple_str.__name__, member_name, s))
+            bits |= member.bits
+        return bits
+
+    @classmethod
+    def bits_from_str(cls, s):
+        """ Converts the output of __str__ into an integer. """
+        try:
+            if len(s) <= len(cls.__name__) or not s.startswith(cls.__name__):
+                return cls.bits_from_simple_str(s)
+            c = s[len(cls.__name__)]
+            if c == '(':
+                if not s.endswith(')'):
+                    raise ValueError
+                return cls.bits_from_simple_str(s[len(cls.__name__)+1:-1])
+            elif c == '.':
+                member_name = s[len(cls.__name__)+1:]
+                return cls.__all_members__[member_name].bits
+            else:
+                raise ValueError
+        except ValueError as ex:
+            if ex.args:
+                raise
+            raise ValueError("%s.%s: invalid input: %r" % (cls.__name__, cls.bits_from_str.__name__, s))
+        except KeyError as ex:
+            raise ValueError("%s.%s: Invalid flag name '%s' in input: %r" % (cls.__name__, cls.bits_from_str.__name__,
+                                                                             ex.args[0], s))
 
 
 class CustomFlags(Flags):
