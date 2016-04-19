@@ -108,7 +108,6 @@ def _extract_member_definitions_from_class_attributes(class_dict):
     return members
 
 
-# TODO: extract a FlagCreateParams from FlagProperties and use that when that is enough
 class FlagProperties:
     __slots__ = ('name', 'data', 'bits', 'index', 'index_without_aliases', 'readonly')
 
@@ -125,7 +124,10 @@ class FlagProperties:
             raise AttributeError("Attribute '%s' of '%s' object is readonly." % (key, type(self).__name__))
         super().__setattr__(key, value)
 
-    # FIXME: bug: missing __delattr__
+    def __delattr__(self, key):
+        if getattr(self, 'readonly', False):
+            raise AttributeError("Can't delete readonly attribute '%s' of '%s' object." % (key, type(self).__name__))
+        super().__delattr__(key)
 
 
 _readonly_protected_flags_class_attributes = {
