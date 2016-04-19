@@ -272,25 +272,28 @@ class FlagsMeta(type):
             # utility function to create a subclass of the called class.
             return _create_flags_subclass(cls, *args, **kwargs)
 
-        # We have to instantiate the Flags class from a value (bits, str, etc...)
+        # We have zero or one positional argument and we have to create and/or return an instance of cls.
+        # 1. Zero argument means we have to return a zero flag.
+        # 2. A single positional argument can be one of the following cases:
+        #    1. An object whose class is exactly cls.
+        #    2. An str object that comes from Flags.__str__() or Flags.to_simple_str()
+        #    3. An int object that specifies the bits of the Flags instance to be created.
+
         if not args:
-            # MyFlags(). Directly instantiating a flags class without parameters.
-            # This results in the zero flag and we have a cached instance of that.
+            # case 1 - zero positional arguments, we have to return a zero flag
             return cls.__no_flags__
 
-        # The following part is a possible good candidate for caching and manual optimization for special
-        # cases (for example when the bits exactly match all_flags or another defined member...)
-
-        # value has to be an int, str, or cls instance.
         value = args[0]
 
         if type(value) is cls:
-            # cls was called with an exact instance of cls as its parameter
+            # case 2.1
             return value
 
         if isinstance(value, str):
+            # case 2.2
             bits = cls.bits_from_str(value)
         elif isinstance(value, int):
+            # case 2.3
             bits = cls.__all_bits__ & value
         else:
             raise TypeError("Can't instantiate %s from value %r" % (cls.__name__, value))
@@ -338,14 +341,14 @@ class FlagsMeta(type):
 
     def process_flag_properties_before_flag_creation(cls, flag_properties_list):
         """
-        You can modify all the flag properties before creating the flags instances. You can also remove/add
+        You can modify all of the flag properties before creation of flags instances. You can also remove/add
         members as you wish. You can also set cls.__no_flags_name__ and cls.__all_flags_name__ at this point
         but later they become readonly.
 
         :param flag_properties_list: A list of FlagProperties instances. You can do anything to this
         list: replace/remove items, totally ignore this list and return something else, etc...
         :return: An iterable that yields FlagProperties instances. You have to set only the name, bits, and
-        value attributes of FlagProperties instances, the rest is ignored.
+        optionally the value attribute of FlagProperties instances, the rest is ignored.
         """
         return flag_properties_list
 
