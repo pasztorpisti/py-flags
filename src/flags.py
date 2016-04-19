@@ -36,10 +36,12 @@ class _Undefined:
 UNDEFINED = _Undefined()
 
 
-def _create_flags_subclass(base_enum_class, class_name, flags, *, mixins=(), module=None, qualname=None):
+def _create_flags_subclass(base_enum_class, class_name, flags, *, mixins=(), module=None, qualname=None,
+                           no_flags_name='no_flags', all_flags_name='all_flags'):
     meta_class = type(base_enum_class)
     bases = tuple(mixins) + (base_enum_class,)
-    flags_class = meta_class(class_name, bases, {'__members__': flags})
+    class_dict = dict(__members__=flags, __no_flags_name__=no_flags_name, __all_flags_name__=all_flags_name)
+    flags_class = meta_class(class_name, bases, class_dict)
 
     # disabling on enabling pickle on the new class based on our module parameter
     if module is None:
