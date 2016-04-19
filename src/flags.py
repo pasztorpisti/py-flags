@@ -38,10 +38,14 @@ UNDEFINED = _Undefined()
 
 
 def _create_flags_subclass(base_enum_class, class_name, flags, *, mixins=(), module=None, qualname=None,
-                           no_flags_name='no_flags', all_flags_name='all_flags'):
+                           no_flags_name=UNDEFINED, all_flags_name=UNDEFINED):
     meta_class = type(base_enum_class)
     bases = tuple(mixins) + (base_enum_class,)
-    class_dict = dict(__members__=flags, __no_flags_name__=no_flags_name, __all_flags_name__=all_flags_name)
+    class_dict = {'__members__': flags}
+    if no_flags_name is not UNDEFINED:
+        class_dict['__no_flags_name__'] = no_flags_name
+    if all_flags_name is not UNDEFINED:
+        class_dict['__all_flags_name__'] = all_flags_name
     flags_class = meta_class(class_name, bases, class_dict)
 
     # disabling on enabling pickle on the new class based on our module parameter
@@ -121,6 +125,18 @@ class FlagProperties:
         super().__setattr__(key, value)
 
 
+_readonly_protected_flags_class_attributes = {
+    '__writable_protected_flags_class_attributes__',
+    '__all_members__', '__members__', '__members_without_aliases__', '__member_aliases__', '__bits_to_properties__',
+}
+
+# these attributes are writable when __writable_protected_flags_class_attributes__ is set to True on the class.
+_temporarily_writable_protected_flags_class_attributes = {'__all_bits__', '__no_flags_name__', '__all_flags_name__'}
+
+_protected_flags_class_attributes = _readonly_protected_flags_class_attributes |\
+                                    _temporarily_writable_protected_flags_class_attributes
+
+
 def _initialize_class_dict_and_create_flags_class(class_dict, class_name, create_flags_class):
     # all_members is used by __getattribute__ and __setattribute__. It contains all items
     # from members and also the no_flags and all_flags special members if they are defined.
@@ -134,7 +150,6 @@ def _initialize_class_dict_and_create_flags_class(class_dict, class_name, create
     class_dict['__members_without_aliases__'] = ReadonlyDictProxy(members_without_aliases)
     class_dict['__bits_to_properties__'] = ReadonlyDictProxy(bits_to_properties)
     class_dict['__member_aliases__'] = ReadonlyDictProxy(member_aliases)
-    class_dict['__all_bits__'] = None
 
     flags_class = create_flags_class(class_dict)
 
@@ -181,6 +196,8 @@ def _initialize_class_dict_and_create_flags_class(class_dict, class_name, create
 
 
 def _create_flags_class_with_members(class_name, class_dict, member_definitions, create_flags_class):
+    class_dict['__writable_protected_flags_class_attributes__'] = True
+
     flags_class, instantiate_and_add_member = _initialize_class_dict_and_create_flags_class(
         class_dict, class_name, create_flags_class)
 
@@ -196,16 +213,17 @@ def _create_flags_class_with_members(class_name, class_dict, member_definitions,
     all_bits = functools.reduce(operator.__or__, all_bits)
     flags_class.__all_bits__ = all_bits
 
+    del flags_class.__writable_protected_flags_class_attributes__
+
     for properties in flag_properties_list:
         instantiate_and_add_member(properties)
 
-    def instantiate_special_member(name_attribute, default_name, bits):
-        name = getattr(flags_class, name_attribute, default_name)
+    def instantiate_special_member(name, bits):
         if name is not None:
             instantiate_and_add_member(FlagProperties(name=name, bits=bits), special_member=True)
 
-    instantiate_special_member('__no_flags_name__', 'no_flags', 0)
-    instantiate_special_member('__all_flags_name__', 'all_flags', all_bits)
+    instantiate_special_member(flags_class.__no_flags_name__, 0)
+    instantiate_special_member(flags_class.__all_flags_name__, all_bits)
 
     return flags_class
 
@@ -222,10 +240,6 @@ def _internal_instantiate_flags(flags_class, *args, **kwargs):
     """
     kwargs[_INTERNAL_FLAGS_INSTANTIATION_MAGIC_PARAM_NAME] = True
     return flags_class(*args, **kwargs)
-
-
-_protected_flags_class_attributes = {'__all_members__', '__members__', '__members_without_aliases__',
-                                     '__member_aliases__', '__bits_to_properties__', '__all_bits__'}
 
 
 class FlagsMeta(type):
@@ -272,13 +286,14 @@ class FlagsMeta(type):
         return collections.OrderedDict()
 
     def __delattr__(cls, name):
-        if name in _protected_flags_class_attributes:
+        if name in _protected_flags_class_attributes and name != '__writable_protected_flags_class_attributes__':
             raise AttributeError("Can't delete protected attribute '%s'" % name)
         super().__delattr__(name)
 
     def __setattr__(cls, name, value):
         if name in _protected_flags_class_attributes:
-            if getattr(cls, name, UNDEFINED) is not None:
+            if name in _readonly_protected_flags_class_attributes or\
+                    not getattr(cls, '__writable_protected_flags_class_attributes__', False):
                 raise AttributeError("Can't assign protected attribute '%s'" % name)
         elif name in getattr(cls, '__all_members__', {}):
             raise AttributeError("Can't assign protected attribute '%s'" % name)
@@ -304,6 +319,10 @@ class FlagsMeta(type):
 
     def process_flag_properties_before_flag_creation(cls, flag_properties_list):
         """
+        You can modify all the flag properties before creating the flags instances. You can also remove/add
+        members as you wish. You can also set cls.__no_flags_name__ and cls.__all_flags_name__ at this point
+        but later they become readonly.
+
         :param flag_properties_list: A list of FlagProperties instances. You can do anything to this
         list: replace/remove items, totally ignore this list and return something else, etc...
         :return: An iterable that yields FlagProperties instances. You have to set only the name, bits, and
@@ -313,6 +332,9 @@ class FlagsMeta(type):
 
     # TODO: utility method to fill the flag members to a namespace, and another utility that can fill
     # them to a module (a specific case of namespaces)
+
+    __no_flags_name__ = 'no_flags'
+    __all_flags_name__ = 'all_flags'
 
 
 class FlagsArithmeticMixin:
