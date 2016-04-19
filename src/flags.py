@@ -108,6 +108,7 @@ def _extract_member_definitions_from_class_attributes(class_dict):
     return members
 
 
+# TODO: extract a FlagCreateParams from FlagProperties and use that when that is enough
 class FlagProperties:
     __slots__ = ('name', 'data', 'bits', 'index', 'index_without_aliases', 'readonly')
 
@@ -124,31 +125,37 @@ class FlagProperties:
             raise AttributeError("Attribute '%s' of '%s' object is readonly." % (key, type(self).__name__))
         super().__setattr__(key, value)
 
+    # FIXME: bug: missing __delattr__
+
 
 _readonly_protected_flags_class_attributes = {
-    '__writable_protected_flags_class_attributes__',
-    '__all_members__', '__members__', '__members_without_aliases__', '__member_aliases__', '__bits_to_properties__',
+    '__writable_protected_flags_class_attributes__', '__all_members__', '__members__', '__members_without_aliases__',
+    '__member_aliases__', '__bits_to_properties__', '__bits_to_instance__',
 }
 
 # these attributes are writable when __writable_protected_flags_class_attributes__ is set to True on the class.
-_temporarily_writable_protected_flags_class_attributes = {'__all_bits__', '__no_flags_name__', '__all_flags_name__'}
+_temporarily_writable_protected_flags_class_attributes = {
+    '__all_bits__', '__no_flags__', '__all_flags__', '__no_flags_name__', '__all_flags_name__',
+}
 
 _protected_flags_class_attributes = _readonly_protected_flags_class_attributes |\
                                     _temporarily_writable_protected_flags_class_attributes
 
 
 def _initialize_class_dict_and_create_flags_class(class_dict, class_name, create_flags_class):
-    # all_members is used by __getattribute__ and __setattribute__. It contains all items
+    # all_members is used by __getattribute__ and __setattr__. It contains all items
     # from members and also the no_flags and all_flags special members if they are defined.
     all_members = collections.OrderedDict()
     members = collections.OrderedDict()
     members_without_aliases = collections.OrderedDict()
     bits_to_properties = collections.OrderedDict()
+    bits_to_instance = collections.OrderedDict()
     member_aliases = {}
     class_dict['__all_members__'] = ReadonlyDictProxy(all_members)
     class_dict['__members__'] = ReadonlyDictProxy(members)
     class_dict['__members_without_aliases__'] = ReadonlyDictProxy(members_without_aliases)
     class_dict['__bits_to_properties__'] = ReadonlyDictProxy(bits_to_properties)
+    class_dict['__bits_to_instance__'] = ReadonlyDictProxy(bits_to_instance)
     class_dict['__member_aliases__'] = ReadonlyDictProxy(member_aliases)
 
     flags_class = create_flags_class(class_dict)
@@ -166,11 +173,15 @@ def _initialize_class_dict_and_create_flags_class(class_dict, class_name, create
                 class_name, properties.name, properties.bits, member.bits))
         return member
 
-    def add_member(member, properties, special):
+    def register_member(member, properties, special):
         # special members (like no_flags, and all_flags) have no index
         # and they appear only in the __all_members__ collection.
         if all_members.setdefault(properties.name, member) is not member:
             raise ValueError('Duplicate flag name: %r' % properties.name)
+
+        # It isn't a problem if an instance with the same bits already exists in bits_to_instance because
+        # a member contains only the bits so our new member is equivalent with the replaced one.
+        bits_to_instance[properties.bits] = member
 
         properties.index = None
         properties.index_without_aliases = None
@@ -188,17 +199,18 @@ def _initialize_class_dict_and_create_flags_class(class_dict, class_name, create
         if not properties.readonly:
             properties.readonly = True
 
-    def instantiate_and_add_member(properties, special_member=False):
+    def instantiate_and_register_member(properties, special_member=False):
         member = instantiate_member(properties, special_member)
-        add_member(member, properties, special_member)
+        register_member(member, properties, special_member)
+        return member
 
-    return flags_class, instantiate_and_add_member
+    return flags_class, instantiate_and_register_member
 
 
 def _create_flags_class_with_members(class_name, class_dict, member_definitions, create_flags_class):
     class_dict['__writable_protected_flags_class_attributes__'] = True
 
-    flags_class, instantiate_and_add_member = _initialize_class_dict_and_create_flags_class(
+    flags_class, instantiate_and_register_member = _initialize_class_dict_and_create_flags_class(
         class_dict, class_name, create_flags_class)
 
     flag_properties_list = [FlagProperties(name=name, data=data, bits=1 << index)
@@ -207,24 +219,21 @@ def _create_flags_class_with_members(class_name, class_dict, member_definitions,
     flag_properties_list = flags_class.process_flag_properties_before_flag_creation(flag_properties_list)
     # flag_properties_list isn't anymore guaranteed to be a list, treat it as an iterable
 
-    # flags_class.__all_bits__ is used during flags_class instantiation
-    # so we have to calculate and set it before creating the first member.
-    all_bits = (properties.bits for properties in flag_properties_list)
-    all_bits = functools.reduce(operator.__or__, all_bits)
+    all_bits = 0
+    for properties in flag_properties_list:
+        instantiate_and_register_member(properties)
+        all_bits |= properties.bits
+
+    def instantiate_special_member(name, default_name, bits):
+        name = default_name if name is None else name
+        return instantiate_and_register_member(FlagProperties(name=name, bits=bits), special_member=True)
+
+    flags_class.__no_flags__ = instantiate_special_member(flags_class.__no_flags_name__, '__no_flags__', 0)
+    flags_class.__all_flags__ = instantiate_special_member(flags_class.__all_flags_name__, '__all_flags__', all_bits)
+
     flags_class.__all_bits__ = all_bits
 
     del flags_class.__writable_protected_flags_class_attributes__
-
-    for properties in flag_properties_list:
-        instantiate_and_add_member(properties)
-
-    def instantiate_special_member(name, bits):
-        if name is not None:
-            instantiate_and_add_member(FlagProperties(name=name, bits=bits), special_member=True)
-
-    instantiate_special_member(flags_class.__no_flags_name__, 0)
-    instantiate_special_member(flags_class.__all_flags_name__, all_bits)
-
     return flags_class
 
 
@@ -265,11 +274,8 @@ class FlagsMeta(type):
         # We have to instantiate the Flags class from a value (bits, str, etc...)
         if not args:
             # MyFlags(). Directly instantiating a flags class without __init__ parameters.
-            # This results in the zero flag.
-            # TODO: optimize this out, make sure that there is a no_flags instance
-            # somewhere even if the user specified __no_flags_name__=None on the class.
-            # In that case we can simply return something like cls.no_flags here.
-            return super().__call__(0)
+            # This results in the zero flag and we have a cached instance of that.
+            return cls.__no_flags__
 
         # The following part is a possible good candidate for caching and manual optimization for special
         # cases (for example when the bits exactly match all_flags or another defined member...)
@@ -280,11 +286,18 @@ class FlagsMeta(type):
         if type(value) is cls:
             # cls was called with an exact instance of cls as its parameter
             return value
-        if isinstance(value, int):
-            return super().__call__(value)
+
         if isinstance(value, str):
-            return super().__call__(cls.bits_from_str(value))
-        raise TypeError("Can't instantiate %s from value %r" % (cls.__name__, value))
+            bits = cls.bits_from_str(value)
+        elif isinstance(value, int):
+            bits = cls.__all_bits__ & value
+        else:
+            raise TypeError("Can't instantiate %s from value %r" % (cls.__name__, value))
+
+        instance = cls.__bits_to_instance__.get(bits)
+        if instance:
+            return instance
+        return super().__call__(bits)
 
     @classmethod
     def __prepare__(cls, class_name, bases):
@@ -340,6 +353,7 @@ class FlagsMeta(type):
 
     __no_flags_name__ = 'no_flags'
     __all_flags_name__ = 'all_flags'
+    __all_bits__ = -1
 
 
 class FlagsArithmeticMixin:
@@ -457,7 +471,7 @@ class Flags(FlagsArithmeticMixin, metaclass=FlagsMeta):
         return sum(1 for _ in self)
 
     def __bool__(self):
-        return self.bits == 0
+        return self.bits != 0
 
     def __hash__(self):
         return self.bits ^ hash(type(self))
