@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import collections
+import functools
 import operator
 
 from dictionaries import ReadonlyDictProxy
@@ -187,11 +188,16 @@ def _create_flags_class_with_members(class_name, class_dict, member_definitions,
                             for index, (name, data) in enumerate(member_definitions)]
 
     flag_properties_list = flags_class.process_flag_properties_before_flag_creation(flag_properties_list)
+    # flag_properties_list isn't anymore guaranteed to be a list, treat it as an iterable
 
-    all_bits = 0
+    # flags_class.__all_bits__ is used during flags_class instantiation
+    # so we have to calculate and set it before creating the first member.
+    all_bits = (properties.bits for properties in flag_properties_list)
+    all_bits = functools.reduce(operator.__or__, all_bits)
+    flags_class.__all_bits__ = all_bits
+
     for properties in flag_properties_list:
         instantiate_and_add_member(properties)
-        all_bits |= properties.bits
 
     def instantiate_special_member(name_attribute, default_name, bits):
         name = getattr(flags_class, name_attribute, default_name)
@@ -201,7 +207,6 @@ def _create_flags_class_with_members(class_name, class_dict, member_definitions,
     instantiate_special_member('__no_flags_name__', 'no_flags', 0)
     instantiate_special_member('__all_flags_name__', 'all_flags', all_bits)
 
-    flags_class.__all_bits__ = all_bits
     return flags_class
 
 
@@ -298,7 +303,12 @@ class FlagsMeta(type):
         return len(cls.__members_without_aliases__)
 
     def process_flag_properties_before_flag_creation(cls, flag_properties_list):
-        """ Override this to perform tasks before the creation of members. """
+        """
+        :param flag_properties_list: A list of FlagProperties instances. You can do anything to this
+        list: replace/remove items, totally ignore this list and return something else, etc...
+        :return: An iterable that yields FlagProperties instances. You have to set only the name, bits, and
+        value attributes of FlagProperties instances, the rest is ignored.
+        """
         return flag_properties_list
 
     # TODO: utility method to fill the flag members to a namespace, and another utility that can fill
@@ -311,7 +321,7 @@ class FlagsArithmeticMixin:
     def __init__(self, bits):
         if not isinstance(bits, int):
             raise TypeError('The bits parameter has to be an int value, instead it is %r' % (bits,))
-        self.__bits = bits
+        self.__bits = bits & type(self).__all_bits__
 
     @property
     def bits(self):
