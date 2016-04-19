@@ -118,12 +118,6 @@ class FlagProperties:
         super().__setattr__(key, value)
 
 
-def _validate_flag_properties_list(flag_properties_list):
-    # TODO: check if items are instances of FlagProperties, check for duplicate names,
-    # whether names are allowed, bit value, etc...
-    pass
-
-
 def _initialize_class_dict_and_create_flags_class(class_dict, class_name, create_flags_class):
     # all_members is used by __getattribute__ and __setattribute__. It contains all items
     # from members and also the no_flags and all_flags special members if they are defined.
@@ -141,12 +135,22 @@ def _initialize_class_dict_and_create_flags_class(class_dict, class_name, create
 
     flags_class = create_flags_class(class_dict)
 
-    def instantiate_member(properties, special_member=False):
+    def instantiate_member(properties):
+        if not isinstance(properties.name, str):
+            raise TypeError('Flag name should be an str but it is %r' % (properties.name,))
+        if not isinstance(properties.bits, int):
+            raise TypeError('Flag bits should be an int but it is %r' % (properties.bits,))
         member = _internal_instantiate_flags(flags_class, properties.bits)
         if member.bits != properties.bits:
             raise RuntimeError("%s.__init__ has altered the assigned bits of member '%s' from %r to %r" % (
                 class_name, properties.name, properties.bits, member.bits))
-        all_members[properties.name] = member
+        return member
+
+    def add_member(member, properties, special_member):
+        # special members (like no_flags, and all_flags) have no index
+        # and they appear only in the __all_members__ collection.
+        if all_members.setdefault(properties.name, member) is not member:
+            raise ValueError('Duplicate flag name: %r' % properties.name)
 
         properties.index = None
         properties.index_without_aliases = None
@@ -164,31 +168,34 @@ def _initialize_class_dict_and_create_flags_class(class_dict, class_name, create
         if not properties.readonly:
             properties.readonly = True
 
-    return flags_class, instantiate_member
+    def instantiate_and_add_member(properties, special_member=False):
+        member = instantiate_member(properties)
+        add_member(member, properties, special_member)
+
+    return flags_class, instantiate_and_add_member
 
 
 def _create_flags_class_with_members(class_name, class_dict, member_definitions, create_flags_class):
-    flags_class, instantiate_member = _initialize_class_dict_and_create_flags_class(
+    flags_class, instantiate_and_add_member = _initialize_class_dict_and_create_flags_class(
         class_dict, class_name, create_flags_class)
 
     flag_properties_list = [FlagProperties(name=name, data=data, bits=1 << index)
                             for index, (name, data) in enumerate(member_definitions)]
 
     flag_properties_list = flags_class.process_flag_properties_before_flag_creation(flag_properties_list)
-    _validate_flag_properties_list(flag_properties_list)
 
     all_bits = 0
     for properties in flag_properties_list:
-        instantiate_member(properties)
+        instantiate_and_add_member(properties)
         all_bits |= properties.bits
 
-    # FIXME: check whether the name of no_flags or all_flags is conflicting with other names
-    no_flags_name = getattr(flags_class, '__no_flags_name__', 'no_flags')
-    if no_flags_name is not None:
-        instantiate_member(FlagProperties(name=no_flags_name, bits=0), special_member=True)
-    all_flags_name = getattr(flags_class, '__all_flags_name__', 'all_flags')
-    if all_flags_name is not None:
-        instantiate_member(FlagProperties(name=all_flags_name, bits=all_bits), special_member=True)
+    def instantiate_special_member(name_attribute, default_name, bits):
+        name = getattr(flags_class, name_attribute, default_name)
+        if name is not None:
+            instantiate_and_add_member(FlagProperties(name=name, bits=bits), special_member=True)
+
+    instantiate_special_member('__no_flags_name__', 'no_flags', 0)
+    instantiate_special_member('__all_flags_name__', 'all_flags', all_bits)
 
     flags_class.__all_bits__ = all_bits
     return flags_class
