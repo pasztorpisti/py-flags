@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import collections
-import functools
 import operator
 
 from dictionaries import ReadonlyDictProxy
