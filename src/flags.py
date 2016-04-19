@@ -171,7 +171,7 @@ def _initialize_class_dict_and_create_flags_class(class_dict, class_name, create
             raise ValueError("Flag '%s' has the invalid value of zero" % properties.name)
         member = flags_class(properties.bits)
         if member.bits != properties.bits:
-            raise RuntimeError("%s.__init__ has altered the assigned bits of member '%s' from %r to %r" % (
+            raise RuntimeError("%s has altered the assigned bits of member '%s' from %r to %r" % (
                 class_name, properties.name, properties.bits, member.bits))
         return member
 
@@ -275,7 +275,7 @@ class FlagsMeta(type):
 
         # We have to instantiate the Flags class from a value (bits, str, etc...)
         if not args:
-            # MyFlags(). Directly instantiating a flags class without __init__ parameters.
+            # MyFlags(). Directly instantiating a flags class without parameters.
             # This results in the zero flag and we have a cached instance of that.
             return cls.__no_flags__
 
