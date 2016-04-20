@@ -214,6 +214,12 @@ def _create_flags_class_with_members(class_name, class_dict, member_definitions,
         instantiate_and_register_member(properties)
         all_bits |= properties.bits
 
+    if len(flags_class) == 0:
+        # In this case process_flag_properties_before_flag_creation() returned an empty iterable which isn't allowed.
+        raise RuntimeError("%s.%s returned an iterable with zero %s instances" %
+                           (flags_class.__name__, flags_class.process_flag_properties_before_flag_creation.__name__,
+                            FlagProperties.__name__))
+
     def instantiate_special_member(name, default_name, bits):
         name = default_name if name is None else name
         return instantiate_and_register_member(FlagProperties(name=name, bits=bits), special_member=True)
