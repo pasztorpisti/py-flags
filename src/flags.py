@@ -2,6 +2,7 @@
 import collections
 import operator
 
+import pickle
 from dictionaries import ReadonlyDictProxy
 
 
@@ -51,7 +52,7 @@ def _create_flags_subclass(base_enum_class, class_name, flags, *, mixins=(), mod
     if module is None:
         # Making the class unpicklable.
         def disabled_reduce_ex(self, proto):
-            raise TypeError("%r is unpicklable" % (self,))
+            raise pickle.PicklingError("'%s' is unpicklable" % (type(self).__name__,))
         flags_class.__reduce_ex__ = disabled_reduce_ex
 
         # For pickle module==None means the __main__ module so let's change it to a non-existing name.
