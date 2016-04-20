@@ -1,3 +1,4 @@
+""" This module tests the compatibility of the standard pickle module with our flags classes and instances. """
 import pickle
 from unittest import TestCase
 
@@ -50,6 +51,8 @@ class PicklingFlagsCreatedAndStoredAtClassScope(test_base.PicklingSuccessTestBas
 DynamicModuleScopeFlagsWithoutModuleName = Flags('DynamicModuleScopeFlagsWithoutModuleName', 'f0 f1 f2 f3')
 
 
+# Pickling HAS TO FAIL in some cases. If pickle can't the fully qualified name of the class then it should
+# fail. This can be a problem in case of flags classes that has been created "dynamically" with a function call.
 class PicklingFailure(TestCase):
     DynamicInnerFlags = Flags('DynamicInnerFlags', 'f0 f1 f2 f3', module=__name__)
 
