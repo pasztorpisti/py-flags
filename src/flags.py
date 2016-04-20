@@ -71,8 +71,8 @@ def _process_inline_members_definition(members):
     :param members: this can be any of the following:
     - a string containing a space and/or comma separated list of names: e.g.:
       "item1 item2 item3" OR "item1,item2,item3" OR "item1, item2, item3"
-    - tuple/list/set/frozenset of strings (names)
-    - dict of (name, data) pairs
+    - tuple/list/Set of strings (names)
+    - Mapping of (name, data) pairs
     - any kind of iterable that yields (name, data) pairs
     :return: An iterable of (name, data) pairs.
     """
