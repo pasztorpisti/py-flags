@@ -260,13 +260,17 @@ class FlagsMeta(type):
             raise RuntimeError("Your flags class can derive at most from one other FlagsBase subclass.")
 
         member_definitions = _extract_member_definitions_from_class_attributes(class_dict)
-        if flags_bases and hasattr(flags_bases[0], '__members__'):
+        if flags_bases and not flags_bases[0].__is_abstract:
             raise RuntimeError("You can't subclass %r because it has already defined flag members" % (flags_bases[0],))
 
         if not member_definitions:
             return create_flags_class()
 
         return _create_flags_class_with_members(class_name, class_dict, member_definitions, create_flags_class)
+
+    @property
+    def __is_abstract(cls):
+        return not hasattr(cls, '__members__')
 
     def __call__(cls, *args, **kwargs):
         if kwargs or len(args) >= 2:
@@ -280,6 +284,10 @@ class FlagsMeta(type):
         #    1. An object whose class is exactly cls.
         #    2. An str object that comes from Flags.__str__() or Flags.to_simple_str()
         #    3. An int object that specifies the bits of the Flags instance to be created.
+
+        if cls.__is_abstract:
+            raise RuntimeError("Instantiation of abstract flags class '%s.%s' isn't allowed." % (
+                cls.__module__, cls.__name__))
 
         if not args:
             # case 1 - zero positional arguments, we have to return a zero flag
