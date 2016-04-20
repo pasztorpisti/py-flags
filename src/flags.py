@@ -381,6 +381,12 @@ class FlagsArithmeticMixin:
             return False
         return (item.__bits & self.__bits) == item.__bits
 
+    def is_disjoint(self, *flags_instances):
+        for flags in flags_instances:
+            if self & flags:
+                return False
+        return True
+
     def __create_flags_instance(self, bits):
         # optimization, exploiting immutability
         if bits == self.__bits:
