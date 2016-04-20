@@ -250,22 +250,18 @@ class FlagsMeta(type):
             return super(FlagsMeta, mcs).__new__(mcs, class_name, bases, custom_class_dict or class_dict)
 
         if Flags is None:
-            # This __new__ call is creating Flags.
+            # This __new__ call is creating the Flags class of this module.
             return create_flags_class()
 
-        # We don't allow more than one base classes derived from Flags.
-        # FIXME: maybe we could allow more Flags subclasses as bases if none of them define any members.
         flags_bases = [base for base in bases if issubclass(base, Flags)]
-        if len(flags_bases) >= 2:
-            raise RuntimeError("Your flags class can derive at most from one other FlagsBase subclass.")
+        for base in flags_bases:
+            if not base.__is_abstract:
+                raise RuntimeError("You can't subclass '%s' because it has already defined flag members" %
+                                   (base.__name__,))
 
         member_definitions = _extract_member_definitions_from_class_attributes(class_dict)
-        if flags_bases and not flags_bases[0].__is_abstract:
-            raise RuntimeError("You can't subclass %r because it has already defined flag members" % (flags_bases[0],))
-
         if not member_definitions:
             return create_flags_class()
-
         return _create_flags_class_with_members(class_name, class_dict, member_definitions, create_flags_class)
 
     @property
