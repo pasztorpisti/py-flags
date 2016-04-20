@@ -101,10 +101,6 @@ def _extract_member_definitions_from_class_attributes(class_dict):
         duplicates = [name for name, count in collections.Counter(member_names).items() if count >= 2]
         raise ValueError("Duplicate member definition(s): %s" % ', '.join(sorted(duplicates)))
 
-    class_and_flag_member_conflicts = set(member_dict.keys()) & set(class_dict.keys())
-    if class_and_flag_member_conflicts:
-        raise ValueError("Flag member name(s) conflicting with other class attribute(s): %s" %
-                         ', '.join(sorted(class_and_flag_member_conflicts)))
     return members
 
 
