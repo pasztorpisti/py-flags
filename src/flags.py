@@ -66,19 +66,22 @@ def _create_flags_subclass(base_enum_class, class_name, flags, *, mixins=(), mod
 
 
 def _process_inline_members_definition(members):
+    """
+    :param members: this can be any of the following:
+    - a string containing a space and/or comma separated list of names: e.g.:
+      "item1 item2 item3" OR "item1,item2,item3" OR "item1, item2, item3"
+    - tuple/list/set/frozenset of strings (names)
+    - dict of (name, data) pairs
+    - any kind of iterable that yields (name, data) pairs
+    :return: An iterable of (name, data) pairs.
+    """
     if isinstance(members, str):
-        members = [(name, UNDEFINED) for name in members.replace(',', ' ').split()]
+        members = ((name, UNDEFINED) for name in members.replace(',', ' ').split())
     elif isinstance(members, (tuple, list, set, frozenset)):
         if members and isinstance(next(iter(members)), str):
-            members = [(name, UNDEFINED) for name in members]
-        else:
-            members = list(members)
+            members = ((name, UNDEFINED) for name in members)
     elif isinstance(members, dict):
-        members = list(members.items())
-    else:
-        members = list(members)
-
-    # At this point members must be a list of (name, data) pairs.
+        members = members.items()
     return members
 
 
@@ -88,9 +91,6 @@ def _extract_member_definitions_from_class_attributes(class_dict):
                if not name.startswith('_') and not _is_descriptor(data)]
     for name, data in members:
         del class_dict[name]
-    # Members defined as class attributes (not as inline __members__) go the to beginning of the list.
-    # This way flags subclasses that customize value assignment to inline members can easily make use
-    # of the values already assigned to non-inline members.
     members.extend(inline_members)
 
     # checking for duplicate member names
@@ -241,7 +241,7 @@ def _create_flags_class_with_members(class_name, class_dict, member_definitions,
 class FlagsMeta(type):
     def __new__(mcs, class_name, bases, class_dict):
         if '__slots__' in class_dict:
-            raise RuntimeError("You aren't allowed to use __slots__ or instance attributes in Flags subclass "
+            raise RuntimeError("You aren't allowed to use __slots__ and instance attributes in Flags subclass "
                                "'%s.%s'" % (class_dict['__module__'], class_name))
         class_dict['__slots__'] = ()
 
@@ -252,7 +252,8 @@ class FlagsMeta(type):
             # This __new__ call is creating Flags.
             return create_flags_class()
 
-        # We don't allow more than one base classes that are derived from Flags.
+        # We don't allow more than one base classes derived from Flags.
+        # FIXME: maybe we could allow more Flags subclasses as bases if none of them define any members.
         flags_bases = [base for base in bases if issubclass(base, Flags)]
         if len(flags_bases) >= 2:
             raise RuntimeError("Your flags class can derive at most from one other FlagsBase subclass.")
@@ -272,7 +273,7 @@ class FlagsMeta(type):
             # utility function to create a subclass of the called class.
             return _create_flags_subclass(cls, *args, **kwargs)
 
-        # We have zero or one positional argument and we have to create and/or return an instance of cls.
+        # We have zero or one positional argument and we have to create and/or return an exact instance of cls.
         # 1. Zero argument means we have to return a zero flag.
         # 2. A single positional argument can be one of the following cases:
         #    1. An object whose class is exactly cls.
@@ -296,7 +297,7 @@ class FlagsMeta(type):
             # case 2.3
             bits = cls.__all_bits__ & value
         else:
-            raise TypeError("Can't instantiate %s from value %r" % (cls.__name__, value))
+            raise TypeError("Can't instantiate flags class '%s' from value %r" % (cls.__name__, value))
 
         instance = cls.__bits_to_instance__.get(bits)
         if instance:
