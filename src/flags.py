@@ -78,7 +78,7 @@ def _process_inline_members_definition(members):
     """
     if isinstance(members, str):
         members = ((name, UNDEFINED) for name in members.replace(',', ' ').split())
-    elif isinstance(members, (tuple, list, set, frozenset)):
+    elif isinstance(members, (tuple, list, collections.Set)):
         if members and isinstance(next(iter(members)), str):
             members = ((name, UNDEFINED) for name in members)
     elif isinstance(members, dict):
