@@ -87,20 +87,12 @@ def _process_inline_members_definition(members):
 
 
 def _extract_member_definitions_from_class_attributes(class_dict):
-    inline_members = _process_inline_members_definition(class_dict.pop('__members__', ()))
     members = [(name, data) for name, data in class_dict.items()
                if not name.startswith('_') and not _is_descriptor(data)]
     for name, data in members:
         del class_dict[name]
-    members.extend(inline_members)
 
-    # checking for duplicate member names
-    member_dict = collections.OrderedDict(members)
-    if len(member_dict) < len(members):
-        member_names = [name for name, data in members]
-        duplicates = [name for name, count in collections.Counter(member_names).items() if count >= 2]
-        raise ValueError("Duplicate member definition(s): %s" % ', '.join(sorted(duplicates)))
-
+    members.extend(_process_inline_members_definition(class_dict.pop('__members__', ())))
     return members
 
 
