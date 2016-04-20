@@ -28,13 +28,16 @@ def _is_descriptor(obj):
     return hasattr(obj, '__get__') or hasattr(obj, '__set__') or hasattr(obj, '__delete__')
 
 
-class _Undefined:
+class _Const:
+    def __init__(self, name):
+        self.__name = name
+
     def __repr__(self):
-        return 'UNDEFINED'
+        return self.__name
 
 
 # "singleton" to be used as a const value with identity checks
-UNDEFINED = _Undefined()
+UNDEFINED = _Const('UNDEFINED')
 
 
 def _create_flags_subclass(base_enum_class, class_name, flags, *, mixins=(), module=None, qualname=None,
