@@ -154,7 +154,7 @@ def _initialize_class_dict_and_create_flags_class(class_dict, class_name, create
         if not isinstance(properties.name, str):
             raise TypeError('Flag name should be an str but it is %r' % (properties.name,))
         if not isinstance(properties.bits, int):
-            raise TypeError('Flag bits should be an int but it is %r' % (properties.bits,))
+            raise TypeError("Bits for flag '%s' should be an int but it is %r" % (properties.name, properties.bits))
         if not special and properties.bits == 0:
             raise ValueError("Flag '%s' has the invalid value of zero" % properties.name)
         member = flags_class(properties.bits)
@@ -551,10 +551,20 @@ class Flags(FlagsArithmeticMixin, metaclass=FlagsMeta):
                                                                              ex.args[0], s))
 
 
-class CustomFlags(Flags):
+class UserDefinedBitFlags(Flags):
     @classmethod
     def process_flag_properties_before_flag_creation(cls, flag_properties_list):
-        # TODO
         for properties in flag_properties_list:
-            properties.bits = properties.data
+            if isinstance(properties.data, int):
+                properties.bits = properties.data
+                properties.data = None
+            elif isinstance(properties.data, (tuple, list)):
+                if len(properties.data) not in (1, 2):
+                    raise ValueError("Expected a tuple/list of 1 or 2 items (bits [,data]) for flag '%s', received %r" %
+                                     (properties.name, properties.data))
+                properties.bits = properties.data[0]
+                properties.data = properties.data[1] if len(properties.data) == 2 else None
+            else:
+                raise ValueError("Expected an int or a tuple/list of (bits, data) as the value of flag '%s' "
+                                 "but received %r" % (properties.name, properties.data))
         return flag_properties_list
