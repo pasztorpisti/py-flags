@@ -60,5 +60,4 @@ setup(
     package_dir={'': 'src'},
 
     test_suite='tests',
-    tests_require=['mock'],
 )
