@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
 import collections
 import functools
-import operator
-
 import pickle
-from dictionaries import ReadonlyDictProxy
 
+from dictionaries import ReadonlyDictProxy
 
 __all__ = ['Flags', 'UserDefinedBitFlags', 'FlagProperties', 'UNDEFINED']
 
