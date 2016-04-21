@@ -1,11 +1,10 @@
 """ This module tests the compatibility of the standard pickle module with our flags classes and instances. """
 import pickle
-from unittest import TestCase
+import sys
+from unittest import TestCase, skipIf
 
 from flags import Flags
-
-
-# Don't import classes from base directly to the namespace of this
+# Don't import classes from test_base directly to the namespace of this
 # module in order to avoid discovering those base classes as tests.
 from . import test_base
 
@@ -21,6 +20,7 @@ class PicklingFlagsDeclaredAsClassAtModuleScope(test_base.PicklingSuccessTestBas
     FlagsClass = ModuleScopeFlags
 
 
+@skipIf(sys.version_info < (3, 4), 'Pickling inner classes with __qualname__ is supported only by python3.4+')
 class PicklingFlagsDeclaredAsClassInsideAnotherClass(test_base.PicklingSuccessTestBase):
     # InnerFlags isn't at module scope
     class InnerFlags(Flags):
@@ -39,6 +39,7 @@ class PicklingFlagsCreatedAndStoredAtModuleScope(test_base.PicklingSuccessTestBa
     FlagsClass = DynamicModuleScopeFlags
 
 
+@skipIf(sys.version_info < (3, 4), 'Pickling inner classes with __qualname__ is supported only by python3.4+')
 class PicklingFlagsCreatedAndStoredAtClassScope(test_base.PicklingSuccessTestBase):
     DynamicallyCreatedInnerFlags = Flags(
         'DynamicallyCreatedInnerFlags', 'f0 f1 f2 f3', module=__name__,

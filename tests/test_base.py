@@ -4,12 +4,20 @@ You can use this module to declare reusable test base classes/mixins.
 """
 
 import pickle
+import sys
 from unittest import TestCase, TestSuite
 
 
 class PicklingTestCase(TestCase):
     def _pickle_and_unpickle(self, flags):
-        pickled = pickle.dumps(flags)
+        # Python3.3 and earlier pickle doesn't seem to handle __qualname__.
+        # In python3.4 we already have protocol 4 that handles the __qualname__
+        # of inner classes but we have to specify protocol 4 explicitly.
+        # In python3.5 pickling inner classes works without specifying the protocol.
+        if sys.version_info[:2] == (3, 4):
+            pickled = pickle.dumps(flags, 4)
+        else:
+            pickled = pickle.dumps(flags)
         unpickled = pickle.loads(pickled)
         self.assertEqual(unpickled, flags)
         # Just making sure...
