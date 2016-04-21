@@ -556,8 +556,7 @@ class Flags(FlagsArithmeticMixin, metaclass=FlagsMeta):
         for member_name in filter(None, member_names):
             member = cls.__all_members__.get(member_name)
             if member is None:
-                raise ValueError("%s.%s: Invalid flag name '%s' in string %r" % (
-                    cls.__name__, cls.bits_from_simple_str.__name__, member_name, s))
+                raise ValueError("Invalid flag '%s.%s' in string %r" % (cls.__name__, member_name, s))
             bits |= member.bits
         return bits
 
