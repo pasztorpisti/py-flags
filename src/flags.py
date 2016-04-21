@@ -336,7 +336,8 @@ class FlagsMeta(type):
         return collections.OrderedDict()
 
     def __delattr__(cls, name):
-        if name in _protected_flags_class_attributes and name != '__writable_protected_flags_class_attributes__':
+        if (name in _protected_flags_class_attributes and name != '__writable_protected_flags_class_attributes__') or\
+                (name in getattr(cls, '__all_members__', {})):
             raise AttributeError("Can't delete protected attribute '%s'" % name)
         super().__delattr__(name)
 
