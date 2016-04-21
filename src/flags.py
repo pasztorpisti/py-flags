@@ -91,7 +91,7 @@ def _process_inline_members_definition(members):
 def _extract_member_definitions_from_class_attributes(class_dict):
     members = [(name, data) for name, data in class_dict.items()
                if not name.startswith('_') and not _is_descriptor(data)]
-    for name, data in members:
+    for name, _ in members:
         del class_dict[name]
 
     members.extend(_process_inline_members_definition(class_dict.pop('__members__', ())))
