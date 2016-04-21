@@ -142,18 +142,18 @@ class FlagProperties(ReadonlyzerMixin):
         super().__init__()
 
 
-_readonly_protected_flags_class_attributes = {
+_READONLY_PROTECTED_FLAGS_CLASS_ATTRIBUTES = frozenset([
     '__writable_protected_flags_class_attributes__', '__all_members__', '__members__', '__members_without_aliases__',
     '__member_aliases__', '__bits_to_properties__', '__bits_to_instance__',
-}
+])
 
 # these attributes are writable when __writable_protected_flags_class_attributes__ is set to True on the class.
-_temporarily_writable_protected_flags_class_attributes = {
+_TEMPORARILY_WRITABLE_PROTECTED_FLAGS_CLASS_ATTRIBUTES = frozenset([
     '__all_bits__', '__no_flags__', '__all_flags__', '__no_flags_name__', '__all_flags_name__',
-}
+])
 
-_protected_flags_class_attributes = _readonly_protected_flags_class_attributes |\
-                                    _temporarily_writable_protected_flags_class_attributes
+_PROTECTED_FLAGS_CLASS_ATTRIBUTES = _READONLY_PROTECTED_FLAGS_CLASS_ATTRIBUTES | \
+                                    _TEMPORARILY_WRITABLE_PROTECTED_FLAGS_CLASS_ATTRIBUTES
 
 
 def _initialize_class_dict_and_create_flags_class(class_dict, class_name, create_flags_class):
@@ -336,14 +336,14 @@ class FlagsMeta(type):
         return collections.OrderedDict()
 
     def __delattr__(cls, name):
-        if (name in _protected_flags_class_attributes and name != '__writable_protected_flags_class_attributes__') or\
+        if (name in _PROTECTED_FLAGS_CLASS_ATTRIBUTES and name != '__writable_protected_flags_class_attributes__') or\
                 (name in getattr(cls, '__all_members__', {})):
             raise AttributeError("Can't delete protected attribute '%s'" % name)
         super().__delattr__(name)
 
     def __setattr__(cls, name, value):
-        if name in _protected_flags_class_attributes:
-            if name in _readonly_protected_flags_class_attributes or\
+        if name in _PROTECTED_FLAGS_CLASS_ATTRIBUTES:
+            if name in _READONLY_PROTECTED_FLAGS_CLASS_ATTRIBUTES or\
                     not getattr(cls, '__writable_protected_flags_class_attributes__', False):
                 raise AttributeError("Can't assign protected attribute '%s'" % name)
         elif name in getattr(cls, '__all_members__', {}):

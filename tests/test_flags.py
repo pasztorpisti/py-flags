@@ -2,7 +2,7 @@ import collections
 import re
 from unittest import TestCase
 
-from flags import Flags, FlagProperties, _Const, BitFlags, _protected_flags_class_attributes
+from flags import Flags, FlagProperties, _Const, BitFlags, _PROTECTED_FLAGS_CLASS_ATTRIBUTES
 
 
 class TestUtilities(TestCase):
@@ -479,7 +479,7 @@ class TestFlagsClassMethods(TestCase):
         self.assertEqual(len(self.MyFlags), 3)
 
     def test_setattr_fails_with_protected_class_members(self):
-        for attribute in _protected_flags_class_attributes | set(self.MyFlags.__all_members__.keys()):
+        for attribute in _PROTECTED_FLAGS_CLASS_ATTRIBUTES | set(self.MyFlags.__all_members__.keys()):
             if attribute in ('no_flags', 'all_flags', '__writable_protected_flags_class_attributes__'):
                 regex = re.escape(attribute)
             else:
@@ -489,7 +489,7 @@ class TestFlagsClassMethods(TestCase):
                 delattr(self.MyFlags, attribute)
 
     def test_delattr_fails_with_protected_class_members(self):
-        for attribute in _protected_flags_class_attributes | set(self.MyFlags.__all_members__.keys()):
+        for attribute in _PROTECTED_FLAGS_CLASS_ATTRIBUTES | set(self.MyFlags.__all_members__.keys()):
             with self.assertRaisesRegex(
                     AttributeError, re.escape(r"Can't assign protected attribute '%s'" % attribute)):
                 setattr(self.MyFlags, attribute, 'new_value')
