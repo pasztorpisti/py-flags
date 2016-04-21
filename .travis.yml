@@ -7,6 +7,8 @@ python:
   - "pypy3"
 install:
   - pip install coveralls
+  # Under python3.2 the latest coverage fails with a syntax error this is why we downgrade to 4.0a5
+  - if [[ $TRAVIS_PYTHON_VERSION == 3.2 ]]; then pip install --upgrade coverage==4.0a5; fi
 script:
   - python -m compileall -f .
   - coverage run --source=flags setup.py test
