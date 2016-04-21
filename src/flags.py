@@ -353,7 +353,7 @@ class FlagsMeta(type):
         try:
             return super().__getattribute__('__all_members__')[name]
         except KeyError:
-            raise AttributeError(name) from None
+            raise AttributeError(name)
 
     def __getitem__(cls, name):
         return cls.__all_members__[name]
