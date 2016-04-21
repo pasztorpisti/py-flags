@@ -32,7 +32,7 @@ def find_version(*path):
 setup(
     name='py-flags',
     version=find_version('src', 'flags.py'),
-    description='Type-safe (bit)flags with enum-like declaration.',
+    description='Type-safe (bit)flags for python 3',
     long_description=read_text_file(os.path.join(script_dir, 'README.rst')),
     keywords='flags bit flag set bitfield',
 
