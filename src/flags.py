@@ -134,14 +134,13 @@ class ReadonlyzerMixin:
 class FlagProperties(ReadonlyzerMixin):
     __slots__ = ('name', 'data', 'bits', 'index', 'index_without_aliases')
 
-    def __init__(self, *, name, bits, data=None, index=None, index_without_aliases=None, readonly=False):
-        # Setting our attributes before super().__init__, this way we can set them even if readonly==True.
+    def __init__(self, *, name, bits, data=None, index=None, index_without_aliases=None):
         self.name = name
         self.data = data
         self.bits = bits
         self.index = index
         self.index_without_aliases = index_without_aliases
-        super().__init__(readonly=readonly)
+        super().__init__()
 
 
 _readonly_protected_flags_class_attributes = {
