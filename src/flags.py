@@ -236,6 +236,10 @@ def _create_flags_class_with_members(class_name, class_dict, member_definitions,
 
     all_bits = 0
     for properties in flag_properties_list:
+        if not isinstance(properties, FlagProperties):
+            raise TypeError("%s.%s returned an object that isn't an instance of %s: %r" %
+                            (flags_class.__name__, flags_class.process_flag_properties_before_flag_creation.__name__,
+                             FlagProperties.__name__, properties))
         instantiate_and_register_member(properties)
         all_bits |= properties.bits
 
@@ -261,8 +265,7 @@ def _create_flags_class_with_members(class_name, class_dict, member_definitions,
 class FlagsMeta(type):
     def __new__(mcs, class_name, bases, class_dict):
         if '__slots__' in class_dict:
-            raise RuntimeError("You aren't allowed to use __slots__ and instance attributes in Flags subclass "
-                               "'%s.%s'" % (class_dict['__module__'], class_name))
+            raise RuntimeError("You aren't allowed to use __slots__ in your Flags subclasses")
         class_dict['__slots__'] = ()
 
         def create_flags_class(custom_class_dict=None):
