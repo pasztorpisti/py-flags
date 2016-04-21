@@ -393,8 +393,6 @@ class FlagsArithmeticMixin:
     __slots__ = ('__bits',)
 
     def __new__(cls, bits):
-        if not isinstance(bits, int):
-            raise TypeError('The bits parameter has to be an int value, instead it is %r' % (bits,))
         instance = super().__new__(cls)
         instance.__bits = bits & cls.__all_bits__
         return instance
