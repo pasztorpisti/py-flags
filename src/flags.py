@@ -414,7 +414,8 @@ class FlagsArithmeticMixin:
     def __contains__(self, item):
         if type(item) is not type(self):
             return False
-        return (item.__bits & self.__bits) == item.__bits
+        # this logic is equivalent to that of __ge__(self, item) and __le__(item, self)
+        return item.__bits == (self.__bits & item.__bits)
 
     def is_disjoint(self, *flags_instances):
         for flags in flags_instances:
