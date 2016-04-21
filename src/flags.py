@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import collections
+import functools
 import operator
 
 import pickle
@@ -389,6 +390,15 @@ class FlagsMeta(type):
     __all_bits__ = -1
 
 
+def operator_requires_type_identity(wrapped):
+    @functools.wraps(wrapped)
+    def wrapper(self, other):
+        if type(other) is not type(self):
+            return NotImplemented
+        return wrapped(self, other)
+    return wrapper
+
+
 class FlagsArithmeticMixin:
     __slots__ = ('__bits',)
 
@@ -418,38 +428,46 @@ class FlagsArithmeticMixin:
             return self
         return type(self)(bits)
 
-    def __generate_comparison_operator(operator_):
-        def comparison_operator(self, other):
-            if type(other) is not type(self):
-                return NotImplemented
-            return operator_(self.__bits, other.__bits)
-        comparison_operator.__name__ = operator_.__name__
-        return comparison_operator
+    @operator_requires_type_identity
+    def __or__(self, other):
+        return self.__create_flags_instance(self.__bits | other.__bits)
 
-    def __generate_arithmetic_operator(operator_):
-        def arithmetic_operator(self, other):
-            if type(other) is not type(self):
-                return NotImplemented
-            return self.__create_flags_instance(operator_(self.__bits, other.__bits))
-        arithmetic_operator.__name__ = operator_.__name__
-        return arithmetic_operator
+    @operator_requires_type_identity
+    def __xor__(self, other):
+        return self.__create_flags_instance(self.__bits ^ other.__bits)
 
-    __or__ = __generate_arithmetic_operator(operator.__or__)
-    __xor__ = __generate_arithmetic_operator(operator.__xor__)
-    __and__ = __generate_arithmetic_operator(operator.__and__)
+    @operator_requires_type_identity
+    def __and__(self, other):
+        return self.__create_flags_instance(self.__bits & other.__bits)
 
+    @operator_requires_type_identity
     def __sub__(self, other):
-        if type(other) is not type(self):
-            return NotImplemented
         bits = self.__bits ^ (self.__bits & other.__bits)
         return self.__create_flags_instance(bits)
 
-    __eq__ = __generate_comparison_operator(operator.__eq__)
-    __ne__ = __generate_comparison_operator(operator.__ne__)
-    __ge__ = __generate_comparison_operator(operator.__ge__)
-    __gt__ = __generate_comparison_operator(operator.__gt__)
-    __le__ = __generate_comparison_operator(operator.__le__)
-    __lt__ = __generate_comparison_operator(operator.__lt__)
+    @operator_requires_type_identity
+    def __eq__(self, other):
+        return self.__bits == other.__bits
+
+    @operator_requires_type_identity
+    def __ne__(self, other):
+        return self.__bits != other.__bits
+
+    @operator_requires_type_identity
+    def __ge__(self, other):
+        return other.__bits == (self.__bits & other.__bits)
+
+    @operator_requires_type_identity
+    def __gt__(self, other):
+        return (self.__bits != other.__bits) and (other.__bits == (self.__bits & other.__bits))
+
+    @operator_requires_type_identity
+    def __le__(self, other):
+        return self.__bits == (self.__bits & other.__bits)
+
+    @operator_requires_type_identity
+    def __lt__(self, other):
+        return (self.__bits != other.__bits) and (self.__bits == (self.__bits & other.__bits))
 
     def __invert__(self):
         return self.__create_flags_instance(self.__bits ^ type(self).__all_bits__)
