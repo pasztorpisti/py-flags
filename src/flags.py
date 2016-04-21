@@ -276,6 +276,7 @@ class FlagsMeta(type):
 
         flags_bases = [base for base in bases if issubclass(base, Flags)]
         for base in flags_bases:
+            # pylint: disable=protected-access
             if not base.__is_abstract:
                 raise RuntimeError("You can't subclass '%s' because it has already defined flag members" %
                                    (base.__name__,))
@@ -402,6 +403,7 @@ class FlagsArithmeticMixin:
 
     def __new__(cls, bits):
         instance = super().__new__(cls)
+        # pylint: disable=protected-access
         instance.__bits = bits & cls.__all_bits__
         return instance
 
@@ -413,6 +415,7 @@ class FlagsArithmeticMixin:
         if type(item) is not type(self):
             return False
         # this logic is equivalent to that of __ge__(self, item) and __le__(item, self)
+        # pylint: disable=protected-access
         return item.__bits == (self.__bits & item.__bits)
 
     def is_disjoint(self, *flags_instances):
@@ -429,43 +432,53 @@ class FlagsArithmeticMixin:
 
     @operator_requires_type_identity
     def __or__(self, other):
+        # pylint: disable=protected-access
         return self.__create_flags_instance(self.__bits | other.__bits)
 
     @operator_requires_type_identity
     def __xor__(self, other):
+        # pylint: disable=protected-access
         return self.__create_flags_instance(self.__bits ^ other.__bits)
 
     @operator_requires_type_identity
     def __and__(self, other):
+        # pylint: disable=protected-access
         return self.__create_flags_instance(self.__bits & other.__bits)
 
     @operator_requires_type_identity
     def __sub__(self, other):
+        # pylint: disable=protected-access
         bits = self.__bits ^ (self.__bits & other.__bits)
         return self.__create_flags_instance(bits)
 
     @operator_requires_type_identity
     def __eq__(self, other):
+        # pylint: disable=protected-access
         return self.__bits == other.__bits
 
     @operator_requires_type_identity
     def __ne__(self, other):
+        # pylint: disable=protected-access
         return self.__bits != other.__bits
 
     @operator_requires_type_identity
     def __ge__(self, other):
+        # pylint: disable=protected-access
         return other.__bits == (self.__bits & other.__bits)
 
     @operator_requires_type_identity
     def __gt__(self, other):
+        # pylint: disable=protected-access
         return (self.__bits != other.__bits) and (other.__bits == (self.__bits & other.__bits))
 
     @operator_requires_type_identity
     def __le__(self, other):
+        # pylint: disable=protected-access
         return self.__bits == (self.__bits & other.__bits)
 
     @operator_requires_type_identity
     def __lt__(self, other):
+        # pylint: disable=protected-access
         return (self.__bits != other.__bits) and (self.__bits == (self.__bits & other.__bits))
 
     def __invert__(self):
