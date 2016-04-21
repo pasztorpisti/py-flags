@@ -9,7 +9,7 @@ install:
   - pip install coveralls
 script:
   - python -m compileall -f .
-  - coverage run --source=dictionaries setup.py test
+  - coverage run --source=flags setup.py test
 after_success:
   coveralls
 notifications:
