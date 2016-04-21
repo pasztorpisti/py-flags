@@ -99,26 +99,49 @@ def _extract_member_definitions_from_class_attributes(class_dict):
     return members
 
 
-class FlagProperties:
-    __slots__ = ('name', 'data', 'bits', 'index', 'index_without_aliases', 'readonly')
+class ReadonlyzerMixin:
+    """ Makes instance attributes readonly after setting readonly=True. """
+    __slots__ = ('__readonly',)
+
+    def __init__(self, *args, readonly=False, **kwargs):
+        # Calling super() before setting readonly.
+        # This way super().__init__ can set attributes even if readonly==True
+        super().__init__(*args, **kwargs)
+        self.__readonly = readonly
+
+    @property
+    def readonly(self):
+        try:
+            return self.__readonly
+        except AttributeError:
+            return False
+
+    @readonly.setter
+    def readonly(self, value):
+        self.__readonly = value
+
+    def __setattr__(self, key, value):
+        if self.readonly:
+            raise AttributeError("Can't set attribute '%s' of readonly '%s' object" % (key, type(self).__name__))
+        super().__setattr__(key, value)
+
+    def __delattr__(self, key):
+        if self.readonly:
+            raise AttributeError("Can't delete attribute '%s' of readonly '%s' object" % (key, type(self).__name__))
+        super().__delattr__(key)
+
+
+class FlagProperties(ReadonlyzerMixin):
+    __slots__ = ('name', 'data', 'bits', 'index', 'index_without_aliases')
 
     def __init__(self, *, name, bits, data=None, index=None, index_without_aliases=None, readonly=False):
+        # Setting our attributes before super().__init__, this way we can set them even if readonly==True.
         self.name = name
         self.data = data
         self.bits = bits
         self.index = index
         self.index_without_aliases = index_without_aliases
-        self.readonly = readonly
-
-    def __setattr__(self, key, value):
-        if getattr(self, 'readonly', False):
-            raise AttributeError("Attribute '%s' of '%s' object is readonly." % (key, type(self).__name__))
-        super().__setattr__(key, value)
-
-    def __delattr__(self, key):
-        if getattr(self, 'readonly', False):
-            raise AttributeError("Can't delete readonly attribute '%s' of '%s' object." % (key, type(self).__name__))
-        super().__delattr__(key)
+        super().__init__(readonly=readonly)
 
 
 _readonly_protected_flags_class_attributes = {
