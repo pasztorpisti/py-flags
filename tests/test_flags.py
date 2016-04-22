@@ -549,6 +549,18 @@ class TestFlagsInstanceMethods(TestCase):
         self.assertIsNone((self.MyFlags.f0 | self.MyFlags.f2).data)
         self.assertIsNone((self.MyFlags.f1 | self.MyFlags.f2).data)
 
+    def test_getattr(self):
+        flags = self.MyFlags.f0
+
+        with self.assertRaises(AttributeError):
+            _ = flags.no_flags
+        with self.assertRaises(AttributeError):
+            _ = flags.all_flags
+
+        self.assertTrue(flags.f0)
+        self.assertFalse(flags.f1)
+        self.assertFalse(flags.f2)
+
     def test_int(self):
         self.assertEqual(int(self.MyFlags.no_flags), 0)
         self.assertEqual(int(self.MyFlags.all_flags), 7)

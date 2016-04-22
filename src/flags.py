@@ -561,6 +561,13 @@ class Flags(FlagsArithmeticMixin, metaclass=FlagsMeta):
         properties = self.properties
         return self.properties.data if properties else None
 
+    def __getattr__(self, name):
+        try:
+            member = type(self).__members__[name]
+        except KeyError:
+            raise AttributeError(name)
+        return member in self
+
     def __int__(self):
         return self.bits
 
