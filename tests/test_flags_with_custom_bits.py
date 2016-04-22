@@ -1,12 +1,16 @@
 import re
 from unittest import TestCase
 
-from flags import BitFlags
+from flags import Flags
+
+
+class CustomBitFlags(Flags):
+    __custom_bits__ = True
 
 
 class TestAutoAssignedBits(TestCase):
     def test_auto_assign_with_none(self):
-        class MyFlags(BitFlags):
+        class MyFlags(CustomBitFlags):
             f0 = 0b001
             f1 = None
             f2 = 0b010
@@ -17,7 +21,7 @@ class TestAutoAssignedBits(TestCase):
         self.assertIsNone(MyFlags.f2.data)
 
     def test_auto_assign_with_empty_tuple(self):
-        class MyFlags(BitFlags):
+        class MyFlags(CustomBitFlags):
             f0 = 0b0011
             f1 = ()
             f2 = 0b1000
@@ -28,7 +32,7 @@ class TestAutoAssignedBits(TestCase):
         self.assertIsNone(MyFlags.f2.data)
 
     def test_auto_assign_with_empty_list(self):
-        class MyFlags(BitFlags):
+        class MyFlags(CustomBitFlags):
             f0 = 0b0011
             f1 = []
             f2 = 0b0110
@@ -39,7 +43,7 @@ class TestAutoAssignedBits(TestCase):
         self.assertIsNone(MyFlags.f2.data)
 
     def test_auto_assign_with_none_in_tuple(self):
-        class MyFlags(BitFlags):
+        class MyFlags(CustomBitFlags):
             f0 = 0b0011
             f1 = (None,)
             f2 = 0b0110
@@ -50,7 +54,7 @@ class TestAutoAssignedBits(TestCase):
         self.assertIsNone(MyFlags.f2.data)
 
     def test_auto_assign_with_none_in_list(self):
-        class MyFlags(BitFlags):
+        class MyFlags(CustomBitFlags):
             f0 = 0b0011
             f1 = [None]
             f2 = 0b0110
@@ -61,7 +65,7 @@ class TestAutoAssignedBits(TestCase):
         self.assertIsNone(MyFlags.f2.data)
 
     def test_auto_assign_with_none_and_data_in_tuple(self):
-        class MyFlags(BitFlags):
+        class MyFlags(CustomBitFlags):
             f0 = 0b0011
             f1 = (None, 'data1')
             f2 = 0b0110
@@ -72,7 +76,7 @@ class TestAutoAssignedBits(TestCase):
         self.assertIsNone(MyFlags.f2.data)
 
     def test_auto_assign_with_none_and_data_in_list(self):
-        class MyFlags(BitFlags):
+        class MyFlags(CustomBitFlags):
             f0 = 0b0011
             f1 = [None, 'data1']
             f2 = 0b0110
@@ -83,13 +87,13 @@ class TestAutoAssignedBits(TestCase):
         self.assertIsNone(MyFlags.f2.data)
 
 
-class TestBitFlagsDeclarationErrors(TestCase):
+class TestCustomBitFlagsDeclarationErrors(TestCase):
     def test_data_tuple_longer_than_2(self):
         with self.assertRaisesRegex(
                 ValueError,
                 re.escape(r"Expected a tuple/list of at most 2 items (bits, data) "
                           r"for flag 'f0', received (None, None, None)")):
-            class MyFlags(BitFlags):
+            class MyFlags(CustomBitFlags):
                 f0 = (None, None, None)
 
     def test_data_list_longer_than_2(self):
@@ -97,26 +101,26 @@ class TestBitFlagsDeclarationErrors(TestCase):
                 ValueError,
                 re.escape(r"Expected a tuple/list of at most 2 items (bits, data) "
                           r"for flag 'f0', received [None, None, None]")):
-            class MyFlags(BitFlags):
+            class MyFlags(CustomBitFlags):
                 f0 = [None, None, None]
 
     def test_bits_is_str(self):
         with self.assertRaisesRegex(
                 TypeError,
                 re.escape(r"Expected None or an int object for the bits of flag 'f0', received 'str_bits'")):
-            class MyFlags(BitFlags):
+            class MyFlags(CustomBitFlags):
                 f0 = 'str_bits'
 
     def test_bits_is_str_in_1_long_tuple(self):
         with self.assertRaisesRegex(
                 TypeError,
                 re.escape(r"Expected None or an int object for the bits of flag 'f0', received False")):
-            class MyFlags(BitFlags):
+            class MyFlags(CustomBitFlags):
                 f0 = (False,)
 
     def test_bits_is_str_in_2_long_tuple(self):
         with self.assertRaisesRegex(
                 TypeError,
                 re.escape(r"Expected None or an int object for the bits of flag 'f0', received 5.5")):
-            class MyFlags(BitFlags):
+            class MyFlags(CustomBitFlags):
                 f0 = 5.5, 'data0'

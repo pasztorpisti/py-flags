@@ -5,7 +5,7 @@ import pickle
 
 from dictionaries import ReadonlyDictProxy
 
-__all__ = ['Flags', 'BitFlags', 'FlagProperties', 'UNDEFINED']
+__all__ = ['Flags', 'FlagProperties', 'UNDEFINED']
 
 
 # version_info[0]: Increase in case of large milestones/releases.
@@ -227,9 +227,7 @@ def _create_flags_class_with_members(class_name, class_dict, member_definitions,
     flags_class, instantiate_and_register_member = _initialize_class_dict_and_create_flags_class(
         class_dict, class_name, create_flags_class)
 
-    flag_properties_list = [FlagProperties(name=name, data=data, bits=1 << index)
-                            for index, (name, data) in enumerate(member_definitions)]
-
+    flag_properties_list = [FlagProperties(name=name, data=data, bits=None) for name, data in member_definitions]
     flag_properties_list = flags_class.process_flag_properties_before_flag_creation(flag_properties_list)
     # flag_properties_list isn't anymore guaranteed to be a list, treat it as an iterable
 
@@ -379,14 +377,52 @@ class FlagsMeta(type):
         :return: An iterable that yields FlagProperties instances. You have to set only the name, bits, and
         optionally the value attribute of FlagProperties instances, the rest is ignored.
         """
-        return flag_properties_list
+        all_bits = 0
+        if not cls.__custom_bits__:
+            auto_flags = flag_properties_list
+        else:
+            def normalize_data(properties):
+                data = properties.data
+                if isinstance(data, (tuple, list)):
+                    if len(data) == 0:
+                        return None, None
+                    if len(data) == 1:
+                        return data[0], None
+                    if len(data) == 2:
+                        return data
+                    raise ValueError("Expected a tuple/list of at most 2 items (bits, data) "
+                                     "for flag '%s', received %r" %
+                                     (properties.name, data))
+                return data, None
 
-    # TODO: utility method to fill the flag members to a namespace, and another utility that can fill
-    # them to a module (a specific case of namespaces)
+            auto_flags = []
+            for item in flag_properties_list:
+                item.bits, item.data = normalize_data(item)
+                if item.bits is None:
+                    auto_flags.append(item)
+                elif isinstance(item.bits, int) and not isinstance(item.bits, bool):
+                    all_bits |= item.bits
+                else:
+                    raise TypeError("Expected None or an int object for the bits of flag '%s', received %r" %
+                                    (item.name, item.bits))
+
+        # auto-assigning unused bits to members without custom defined bits
+        bit = 1
+        for item in auto_flags:
+            while bit & all_bits:
+                bit <<= 1
+            item.bits = bit
+            bit <<= 1
+
+        return flag_properties_list
 
     __no_flags_name__ = 'no_flags'
     __all_flags_name__ = 'all_flags'
     __all_bits__ = -1
+    __custom_bits__ = False
+
+    # TODO: utility method to fill the flag members to a namespace, and another utility that can fill
+    # them to a module (a specific case of namespaces)
 
 
 def operator_requires_type_identity(wrapped):
@@ -611,42 +647,3 @@ class Flags(FlagsArithmeticMixin, metaclass=FlagsMeta):
         except KeyError as ex:
             raise ValueError("%s.%s: Invalid flag name '%s' in input: %r" % (cls.__name__, cls.bits_from_str.__name__,
                                                                              ex.args[0], s))
-
-
-class BitFlags(Flags):
-    @classmethod
-    def process_flag_properties_before_flag_creation(cls, flag_properties_list):
-        def normalize_data(properties):
-            data = properties.data
-            if isinstance(data, (tuple, list)):
-                if len(data) == 0:
-                    return None, None
-                if len(data) == 1:
-                    return data[0], None
-                if len(data) == 2:
-                    return data
-                raise ValueError("Expected a tuple/list of at most 2 items (bits, data) for flag '%s', received %r" %
-                                 (properties.name, data))
-            return data, None
-
-        auto_flags = []
-        all_bits = 0
-        for item in flag_properties_list:
-            item.bits, item.data = normalize_data(item)
-            if item.bits is None:
-                auto_flags.append(item)
-            elif isinstance(item.bits, int) and not isinstance(item.bits, bool):
-                all_bits |= item.bits
-            else:
-                raise TypeError("Expected None or an int object for the bits of flag '%s', received %r" %
-                                (item.name, item.bits))
-
-        # auto_flags: auto-assigning unused bits to auto-assign members
-        bit = 1
-        for item in auto_flags:
-            while bit & all_bits:
-                bit <<= 1
-            item.bits = bit
-            bit <<= 1
-
-        return flag_properties_list

@@ -2,7 +2,7 @@ import collections
 import re
 from unittest import TestCase
 
-from flags import Flags, FlagProperties, _Const, BitFlags, _PROTECTED_FLAGS_CLASS_ATTRIBUTES
+from flags import Flags, FlagProperties, _Const, _PROTECTED_FLAGS_CLASS_ATTRIBUTES
 
 
 class TestUtilities(TestCase):
@@ -208,7 +208,8 @@ class TestFlagsMemberDeclaration(TestCase):
                                  all_flags_name='custom_all_flags_name')
 
     def test_aliases(self):
-        class MyFlags(BitFlags):
+        class MyFlags(Flags):
+            __custom_bits__ = True
             f1 = 1
             f1_alias = 1
             f2 = 2
