@@ -34,7 +34,7 @@ setup(
     version=find_version('src', 'flags.py'),
     description='Type-safe (bit)flags for python 3',
     long_description=read_text_file(os.path.join(script_dir, 'README.rst')),
-    keywords='flags bit flag set bitfield',
+    keywords='flags bit flag set bitfield bool arithmetic',
 
     url='https://github.com/pasztorpisti/py-flags',
 
