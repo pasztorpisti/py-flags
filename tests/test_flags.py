@@ -53,12 +53,12 @@ class TestFlagsMemberDeclaration(TestCase):
         def test_member(name, bits):
             member = getattr(flags_class, name)
             self.assertIs(type(member), flags_class)
-            self.assertEqual(member.bits, bits)
+            self.assertEqual(int(member), bits)
 
         if unordered_members:
-            self.assertSetEqual({flags_class.f0.bits, flags_class.f1.bits, flags_class.f2.bits}, {1, 2, 4})
+            self.assertSetEqual({int(flags_class.f0), int(flags_class.f1), int(flags_class.f2)}, {1, 2, 4})
             for member_name in ('f0', 'f1', 'f2'):
-                test_member(member_name, getattr(flags_class, member_name).bits)
+                test_member(member_name, int(getattr(flags_class, member_name)))
         else:
             test_member('f0', 1)
             test_member('f1', 2)
@@ -154,8 +154,8 @@ class TestFlagsMemberDeclaration(TestCase):
         self.assertEqual(flags_class.__no_flags_name__, no_flags_name)
         self.assertEqual(flags_class.__all_flags_name__, all_flags_name)
         self.assertEqual(len(flags_class), 2)
-        self.assertEqual(getattr(flags_class, no_flags_name).bits, 0)
-        self.assertEqual(getattr(flags_class, all_flags_name).bits, 3)
+        self.assertEqual(int(getattr(flags_class, no_flags_name)), 0)
+        self.assertEqual(int(getattr(flags_class, all_flags_name)), 3)
         self.assertEqual(flags_class.__all_bits__, 3)
         self.assertIn(no_flags_name, flags_class.__all_members__)
         self.assertIn(all_flags_name, flags_class.__all_members__)
@@ -308,7 +308,7 @@ class TestAutoAssignedBits(TestCase):
             f1 = my_flag_data
             f2 = 0b010
 
-        self.assertListEqual([MyFlags.f0.bits, MyFlags.f1.bits, MyFlags.f2.bits], [0b001, 0b100, 0b010])
+        self.assertListEqual([int(MyFlags.f0), int(MyFlags.f1), int(MyFlags.f2)], [0b001, 0b100, 0b010])
         self.assertIsNone(MyFlags.f0.data)
         self.assertIs(MyFlags.f1.data, my_flag_data)
         self.assertIsNone(MyFlags.f2.data)
@@ -319,7 +319,7 @@ class TestAutoAssignedBits(TestCase):
             f1 = ()
             f2 = 0b1000
 
-        self.assertListEqual([MyFlags.f0.bits, MyFlags.f1.bits, MyFlags.f2.bits], [0b0011, 0b0100, 0b1000])
+        self.assertListEqual([int(MyFlags.f0), int(MyFlags.f1), int(MyFlags.f2)], [0b0011, 0b0100, 0b1000])
         self.assertIsNone(MyFlags.f0.data)
         self.assertIsNone(MyFlags.f1.data)
         self.assertIsNone(MyFlags.f2.data)
@@ -330,7 +330,7 @@ class TestAutoAssignedBits(TestCase):
             f1 = []
             f2 = 0b0110
 
-        self.assertListEqual([MyFlags.f0.bits, MyFlags.f1.bits, MyFlags.f2.bits], [0b0011, 0b1000, 0b0110])
+        self.assertListEqual([int(MyFlags.f0), int(MyFlags.f1), int(MyFlags.f2)], [0b0011, 0b1000, 0b0110])
         self.assertIsNone(MyFlags.f0.data)
         self.assertIsNone(MyFlags.f1.data)
         self.assertIsNone(MyFlags.f2.data)
@@ -424,7 +424,7 @@ class TestFlagsClassInstantiationFromValue(TestCase):
         flag = MyFlags()
         self.assertIsInstance(flag, MyFlags)
         self.assertEqual(flag, MyFlags.no_flags)
-        self.assertEqual(flag.bits, 0)
+        self.assertEqual(int(flag), 0)
 
     def test_value_is_flags_instance(self):
         MyFlags = Flags('MyFlags', 'f0 f1 f2')
@@ -437,17 +437,17 @@ class TestFlagsClassInstantiationFromValue(TestCase):
         flag = MyFlags(0)
         self.assertIsInstance(flag, MyFlags)
         self.assertEqual(flag, MyFlags.no_flags)
-        self.assertEqual(flag.bits, 0)
+        self.assertEqual(int(flag), 0)
 
     def test_int_value_single_member(self):
         MyFlags = Flags('MyFlags', 'f0 f1 f2')
-        flag = MyFlags(MyFlags.f1.bits)
+        flag = MyFlags(int(MyFlags.f1))
         self.assertIsInstance(flag, MyFlags)
         self.assertEqual(flag, MyFlags.f1)
 
     def test_int_value_multiple_members(self):
         MyFlags = Flags('MyFlags', 'f0 f1 f2')
-        flag = MyFlags(MyFlags.f1.bits | MyFlags.f2.bits)
+        flag = MyFlags(int(MyFlags.f1) | int(MyFlags.f2))
         self.assertIsInstance(flag, MyFlags)
         self.assertEqual(flag, MyFlags.f1 | MyFlags.f2)
 

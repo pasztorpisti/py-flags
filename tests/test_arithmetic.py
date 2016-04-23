@@ -27,16 +27,16 @@ f12 = MyFlags.f1 | MyFlags.f2
 
 class TestArithmetic(TestCase):
     def test_member_bits(self):
-        self.assertEqual(MyOtherFlags.of0.bits, 1)
+        self.assertEqual(int(MyOtherFlags.of0), 1)
 
-        self.assertEqual(no_flags.bits, 0)
-        self.assertEqual(all_flags.bits, 7)
-        self.assertEqual(f0.bits, 1)
-        self.assertEqual(f1.bits, 2)
-        self.assertEqual(f2.bits, 4)
-        self.assertEqual(f01.bits, 3)
-        self.assertEqual(f02.bits, 5)
-        self.assertEqual(f12.bits, 6)
+        self.assertEqual(int(no_flags), 0)
+        self.assertEqual(int(all_flags), 7)
+        self.assertEqual(int(f0), 1)
+        self.assertEqual(int(f1), 2)
+        self.assertEqual(int(f2), 4)
+        self.assertEqual(int(f01), 3)
+        self.assertEqual(int(f02), 5)
+        self.assertEqual(int(f12), 6)
 
     def test_contains(self):
         self.assertNotIn(MyOtherFlags.of0, MyFlags.all_flags)

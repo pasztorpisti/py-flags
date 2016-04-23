@@ -21,7 +21,7 @@ class PicklingTestCase(TestCase):
         unpickled = pickle.loads(pickled)
         self.assertEqual(unpickled, flags)
         # Just making sure...
-        self.assertEqual(unpickled.bits, flags.bits)
+        self.assertEqual(int(unpickled), int(flags))
 
 
 class PicklingSuccessTestBase(PicklingTestCase):

@@ -186,9 +186,9 @@ def _initialize_class_dict_and_create_flags_class(class_dict, class_name, create
         if not special and properties.bits == 0:
             raise ValueError("Flag '%s' has the invalid value of zero" % properties.name)
         member = flags_class(properties.bits)
-        if member.bits != properties.bits:
+        if int(member) != properties.bits:
             raise RuntimeError("%s has altered the assigned bits of member '%s' from %r to %r" % (
-                class_name, properties.name, properties.bits, member.bits))
+                class_name, properties.name, properties.bits, int(member)))
         return member
 
     def register_member(member, properties, special):
@@ -455,9 +455,11 @@ class FlagsArithmeticMixin:
         instance.__bits = bits & cls.__all_bits__
         return instance
 
-    @property
-    def bits(self):
+    def __int__(self):
         return self.__bits
+
+    def __bool__(self):
+        return self.__bits != 0
 
     def __contains__(self, item):
         if type(item) is not type(self):
@@ -551,7 +553,7 @@ class Flags(FlagsArithmeticMixin, metaclass=FlagsMeta):
         True and Flags.properties returns the properties of member1 but __len__() returns 2 and
         __iter__() yields both member0 and member1.
         """
-        return type(self).__bits_to_properties__.get(self.bits) is not None
+        return type(self).__bits_to_properties__.get(int(self)) is not None
 
     @property
     def properties(self):
@@ -561,7 +563,7 @@ class Flags(FlagsArithmeticMixin, metaclass=FlagsMeta):
         We don't store flag properties directly in Flags instances because this way Flags instances that are
         the (temporary) result of flags arithmetic don't have to maintain these fields and it also has some
         benefits regarding memory usage. """
-        return type(self).__bits_to_properties__.get(self.bits)
+        return type(self).__bits_to_properties__.get(int(self))
 
     @property
     def name(self):
@@ -580,9 +582,6 @@ class Flags(FlagsArithmeticMixin, metaclass=FlagsMeta):
             raise AttributeError(name)
         return member in self
 
-    def __int__(self):
-        return self.bits
-
     def __iter__(self):
         members = type(self).__members_without_aliases__.values()
         return (member for member in members if member in self)
@@ -594,11 +593,8 @@ class Flags(FlagsArithmeticMixin, metaclass=FlagsMeta):
     def __len__(self):
         return sum(1 for _ in self)
 
-    def __bool__(self):
-        return self.bits != 0
-
     def __hash__(self):
-        return self.bits ^ hash(type(self))
+        return int(self) ^ hash(type(self))
 
     def __reduce_ex__(self, proto):
         return type(self), (self.to_simple_str(),)
@@ -615,7 +611,7 @@ class Flags(FlagsArithmeticMixin, metaclass=FlagsMeta):
         properties = self.properties
         if properties is None:
             # this is a set of flags as a result of arithmetic
-            return '<%s(%s) bits=0x%04X>' % (type(self).__name__, self.to_simple_str(), self.bits)
+            return '<%s(%s) bits=0x%04X>' % (type(self).__name__, self.to_simple_str(), int(self))
         return '<%s.%s bits=0x%04X data=%r>' % (type(self).__name__, properties.name, properties.bits, properties.data)
 
     def to_simple_str(self):
@@ -640,7 +636,7 @@ class Flags(FlagsArithmeticMixin, metaclass=FlagsMeta):
             member = cls.__all_members__.get(member_name)
             if member is None:
                 raise ValueError("Invalid flag '%s.%s' in string %r" % (cls.__name__, member_name, s))
-            bits |= member.bits
+            bits |= int(member)
         return bits
 
     @classmethod
@@ -656,7 +652,7 @@ class Flags(FlagsArithmeticMixin, metaclass=FlagsMeta):
                 return cls.bits_from_simple_str(s[len(cls.__name__)+1:-1])
             elif c == '.':
                 member_name = s[len(cls.__name__)+1:]
-                return cls.__all_members__[member_name].bits
+                return int(cls.__all_members__[member_name])
             else:
                 raise ValueError
         except ValueError as ex:
