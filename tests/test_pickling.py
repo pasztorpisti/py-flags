@@ -10,10 +10,10 @@ from . import test_base
 
 
 class ModuleScopeFlags(Flags):
-    f0 = 'data0'
-    f1 = 'data1'
-    f2 = 'data2'
-    f3 = 'data3'
+    f0 = ['data0']
+    f1 = ['data1']
+    f2 = ['data2']
+    f3 = ['data3']
 
 
 class PicklingFlagsDeclaredAsClassAtModuleScope(test_base.PicklingSuccessTestBase):
@@ -24,10 +24,10 @@ class PicklingFlagsDeclaredAsClassAtModuleScope(test_base.PicklingSuccessTestBas
 class PicklingFlagsDeclaredAsClassInsideAnotherClass(test_base.PicklingSuccessTestBase):
     # InnerFlags isn't at module scope
     class InnerFlags(Flags):
-        f0 = 'data0'
-        f1 = 'data1'
-        f2 = 'data2'
-        f3 = 'data3'
+        f0 = ['data0']
+        f1 = ['data1']
+        f2 = ['data2']
+        f3 = ['data3']
 
     FlagsClass = InnerFlags
 

@@ -5,7 +5,7 @@ import pickle
 
 from dictionaries import ReadonlyDictProxy
 
-__all__ = ['Flags', 'FlagProperties', 'UNDEFINED']
+__all__ = ['Flags', 'FlagProperties', 'FlagData', 'UNDEFINED']
 
 
 # version_info[0]: Increase in case of large milestones/releases.
@@ -156,6 +156,10 @@ _PROTECTED_FLAGS_CLASS_ATTRIBUTES = _READONLY_PROTECTED_FLAGS_CLASS_ATTRIBUTES |
                                     _TEMPORARILY_WRITABLE_PROTECTED_FLAGS_CLASS_ATTRIBUTES
 
 
+def _is_valid_bits_value(bits):
+    return isinstance(bits, int) and not isinstance(bits, bool)
+
+
 def _initialize_class_dict_and_create_flags_class(class_dict, class_name, create_flags_class):
     # all_members is used by __getattribute__ and __setattr__. It contains all items
     # from members and also the no_flags and all_flags special members if they are defined.
@@ -177,7 +181,7 @@ def _initialize_class_dict_and_create_flags_class(class_dict, class_name, create
     def instantiate_member(properties, special):
         if not isinstance(properties.name, str):
             raise TypeError('Flag name should be an str but it is %r' % (properties.name,))
-        if not isinstance(properties.bits, int) or isinstance(properties.bits, bool):
+        if not _is_valid_bits_value(properties.bits):
             raise TypeError("Bits for flag '%s' should be an int but it is %r" % (properties.name, properties.bits))
         if not special and properties.bits == 0:
             raise ValueError("Flag '%s' has the invalid value of zero" % properties.name)
@@ -259,6 +263,10 @@ def _create_flags_class_with_members(class_name, class_dict, member_definitions,
     return flags_class
 
 
+class FlagData:
+    pass
+
+
 class FlagsMeta(type):
     def __new__(mcs, class_name, bases, class_dict):
         if '__slots__' in class_dict:
@@ -318,7 +326,7 @@ class FlagsMeta(type):
         if isinstance(value, str):
             # case 2.2
             bits = cls.bits_from_str(value)
-        elif isinstance(value, int) and not isinstance(value, bool):
+        elif _is_valid_bits_value(value):
             # case 2.3
             bits = cls.__all_bits__ & value
         else:
@@ -377,34 +385,39 @@ class FlagsMeta(type):
         :return: An iterable that yields FlagProperties instances. You have to set only the name, bits, and
         optionally the value attribute of FlagProperties instances, the rest is ignored.
         """
-        all_bits = 0
-        if not cls.__custom_bits__:
-            auto_flags = flag_properties_list
-        else:
-            def normalize_data(properties):
-                data = properties.data
-                if isinstance(data, (tuple, list)):
-                    if len(data) == 0:
-                        return None, None
-                    if len(data) == 1:
-                        return data[0], None
-                    if len(data) == 2:
-                        return data
-                    raise ValueError("Expected a tuple/list of at most 2 items (bits, data) "
-                                     "for flag '%s', received %r" %
-                                     (properties.name, data))
-                return data, None
 
-            auto_flags = []
-            for item in flag_properties_list:
-                item.bits, item.data = normalize_data(item)
-                if item.bits is None:
-                    auto_flags.append(item)
-                elif isinstance(item.bits, int) and not isinstance(item.bits, bool):
-                    all_bits |= item.bits
-                else:
-                    raise TypeError("Expected None or an int object for the bits of flag '%s', received %r" %
-                                    (item.name, item.bits))
+        def normalize_data(properties):
+            data = properties.data
+            if data is UNDEFINED:
+                return UNDEFINED, None
+            elif isinstance(data, FlagData):
+                return UNDEFINED, data
+            elif _is_valid_bits_value(data):
+                return data, None
+            elif isinstance(data, collections.Iterable):
+                data = tuple(data)
+                if len(data) == 0:
+                    return UNDEFINED, None
+                if len(data) == 1:
+                    return UNDEFINED, data[0]
+                if len(data) == 2:
+                    return data
+                raise ValueError("Iterable is expected to have at most 2 items instead of %s "
+                                 "for flag '%s', iterable: %r" %
+                                 (len(data), properties.name, properties.data))
+            raise TypeError("Expected an int or an iterable of at most 2 items "
+                            "for flag '%s', received %r" % (properties.name, properties.data))
+
+        auto_flags = []
+        all_bits = 0
+        for item in flag_properties_list:
+            item.bits, item.data = normalize_data(item)
+            if item.bits is UNDEFINED:
+                auto_flags.append(item)
+            elif _is_valid_bits_value(item.bits):
+                all_bits |= item.bits
+            else:
+                raise TypeError("Expected an int value as the bits of flag '%s', received %r" % (item.name, item.bits))
 
         # auto-assigning unused bits to members without custom defined bits
         bit = 1
@@ -419,7 +432,6 @@ class FlagsMeta(type):
     __no_flags_name__ = 'no_flags'
     __all_flags_name__ = 'all_flags'
     __all_bits__ = -1
-    __custom_bits__ = False
 
     # TODO: utility method to fill the flag members to a namespace, and another utility that can fill
     # them to a module (a specific case of namespaces)

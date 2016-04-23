@@ -80,9 +80,9 @@ class TestFlagsMemberDeclaration(TestCase):
 
     def test_flag_names_as_class_members(self):
         class MyFlags(Flags):
-            f0 = 'data0'
-            f1 = 'data1'
-            f2 = 'data2'
+            f0 = ['data0']
+            f1 = ['data1']
+            f2 = ['data2']
         self._test_flags_class(MyFlags, has_data=True)
 
     def test_flag_names_as_space_separated_list(self):
@@ -117,37 +117,37 @@ class TestFlagsMemberDeclaration(TestCase):
 
     def test_flags_with_data_as_tuple(self):
         class MyFlags(Flags):
-            __members__ = (('f0', 'data0'), ['f1', 'data1'], ('f2', 'data2'))
+            __members__ = (('f0', ['data0']), ['f1', ['data1']], ('f2', ['data2']))
         self._test_flags_class(MyFlags, has_data=True)
 
     def test_flags_with_data_as_list(self):
         class MyFlags(Flags):
-            __members__ = [('f0', 'data0'), ['f1', 'data1'], ('f2', 'data2')]
+            __members__ = [('f0', ['data0']), ['f1', ['data1']], ('f2', ['data2'])]
         self._test_flags_class(MyFlags, has_data=True)
 
     def test_flags_with_data_as_set(self):
         class MyFlags(Flags):
-            __members__ = {('f0', 'data0'), ('f1', 'data1'), ('f2', 'data2')}
+            __members__ = {('f0', ('data0',)), ('f1', ('data1',)), ('f2', ('data2',))}
         self._test_flags_class(MyFlags, has_data=True, unordered_members=True)
 
     def test_flags_with_data_as_frozenset(self):
         class MyFlags(Flags):
-            __members__ = frozenset([('f0', 'data0'), ('f1', 'data1'), ('f2', 'data2')])
+            __members__ = frozenset([('f0', ('data0',)), ('f1', ('data1',)), ('f2', ('data2',))])
         self._test_flags_class(MyFlags, has_data=True, unordered_members=True)
 
     def test_flags_with_data_as_dict(self):
         class MyFlags(Flags):
-            __members__ = dict(f0='data0', f1='data1', f2='data2')
+            __members__ = dict(f0=['data0'], f1=['data1'], f2=['data2'])
         self._test_flags_class(MyFlags, has_data=True, unordered_members=True)
 
     def test_flags_with_data_as_ordered_dict(self):
         class MyFlags(Flags):
-            __members__ = collections.OrderedDict([('f0', 'data0'), ('f1', 'data1'), ('f2', 'data2')])
+            __members__ = collections.OrderedDict([('f0', ['data0']), ('f1', ['data1']), ('f2', ['data2'])])
         self._test_flags_class(MyFlags, has_data=True)
 
     def test_flags_with_data_as_iterable(self):
         class MyFlags(Flags):
-            __members__ = iter([('f0', 'data0'), ('f1', 'data1'), ('f2', 'data2')])
+            __members__ = iter([('f0', ['data0']), ('f1', ['data1']), ('f2', ['data2'])])
         self._test_flags_class(MyFlags, has_data=True)
 
     def _test_special_flags(self, flags_class, *, no_flags_name='no_flags', all_flags_name='all_flags'):
@@ -209,7 +209,6 @@ class TestFlagsMemberDeclaration(TestCase):
 
     def test_aliases(self):
         class MyFlags(Flags):
-            __custom_bits__ = True
             f1 = 1
             f1_alias = 1
             f2 = 2
@@ -505,9 +504,9 @@ class TestFlagsClassMethods(TestCase):
 
 class TestFlagsInstanceMethods(TestCase):
     class MyFlags(Flags):
-        f0 = 'data0'
-        f1 = 'data1'
-        f2 = 'data2'
+        f0 = ['data0']
+        f1 = ['data1']
+        f2 = ['data2']
 
     def test_is_member(self):
         self.assertFalse(self.MyFlags.no_flags.is_member)
