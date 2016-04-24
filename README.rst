@@ -167,15 +167,19 @@ Testing whether specific flags are set:
     True
 
 
-From the above testing methods the attribute-style access can only check the presence of a single flag. With the
+From the above testing methods the attribute-style access can check only the presence of a single flag. With the
 ``&`` and ``in`` operators you can check the presence of multiple flags at the same time:
 
 .. code-block:: python
 
-    >>> bool((TextStyle.bold | TextStyle.italic) & TextStyle.all_flags)
+    >>> result = TextStyle.bold | TextStyle.italic
+    >>>
+    >>> # True if at least one of the bold and underline flags is set
+    >>> bool((TextStyle.bold | TextStyle.underline) & result)
     True
-    >>> (TextStyle.bold | TextStyle.italic) in TextStyle.all_flags
-    True
+    >>> # True only when both the bold and underline flags are set
+    >>> (TextStyle.bold | TextStyle.underline) in result
+    False
 
 
 If for some reason you need the actual integer value of the flags then you can cast them to ``int``:
