@@ -181,6 +181,45 @@ class TestFlagsMemberDeclaration(TestCase):
         self._test_special_flags(MyFlags, no_flags_name='custom_no_flags_name',
                                  all_flags_name='custom_all_flags_name')
 
+    def test_special_flags_disabled_with_class_declaration(self):
+        # First we check the non-disabled version
+        class NoDisable(Flags):
+            f0 = ()
+
+        self.assertTrue(hasattr(NoDisable, 'no_flags'))
+        self.assertTrue(hasattr(NoDisable, 'all_flags'))
+        self.assertTrue(hasattr(NoDisable, '__no_flags__'))
+        self.assertTrue(hasattr(NoDisable, '__all_flags__'))
+
+        # Now let's check the disabled versions
+        class DisabledNoFlags(Flags):
+            __no_flags_name__ = None
+            f0 = ()
+
+        self.assertFalse(hasattr(DisabledNoFlags, 'no_flags'))
+        self.assertTrue(hasattr(DisabledNoFlags, 'all_flags'))
+        self.assertTrue(hasattr(DisabledNoFlags, '__no_flags__'))
+        self.assertTrue(hasattr(DisabledNoFlags, '__all_flags__'))
+
+        class DisabledAllFlags(Flags):
+            __all_flags_name__ = None
+            f0 = ()
+
+        self.assertTrue(hasattr(DisabledAllFlags, 'no_flags'))
+        self.assertFalse(hasattr(DisabledAllFlags, 'all_flags'))
+        self.assertTrue(hasattr(DisabledAllFlags, '__no_flags__'))
+        self.assertTrue(hasattr(DisabledAllFlags, '__all_flags__'))
+
+        class BothDisabled(Flags):
+            __no_flags_name__ = None
+            __all_flags_name__ = None
+            f0 = ()
+
+        self.assertFalse(hasattr(BothDisabled, 'no_flags'))
+        self.assertFalse(hasattr(BothDisabled, 'all_flags'))
+        self.assertTrue(hasattr(BothDisabled, '__no_flags__'))
+        self.assertTrue(hasattr(BothDisabled, '__all_flags__'))
+
     def test_special_flags_with_dynamic_class_creation_and_custom_flag_names(self):
         flags_class = Flags('MyFlags', 'f0 f1', no_flags_name='custom_no_flags_name',
                             all_flags_name='custom_all_flags_name')
