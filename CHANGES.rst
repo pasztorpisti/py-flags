@@ -8,7 +8,8 @@ Future version
 
 *Release date: future*
 
-Things that happened to the library come here...
+- Added the ``@unique`` decorator that can be used to forbid aliases in a flags class.
+- Added ``__repr__`` for flags classes.
 
 
 v1.0.1
