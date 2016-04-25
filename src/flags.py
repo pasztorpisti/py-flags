@@ -560,7 +560,7 @@ class FlagsArithmeticMixin:
         return self.__create_flags_instance(self.__bits ^ type(self).__all_bits__)
 
 
-# This is used by FlagsBaseMeta to detect whether the currently created class is FlagsBase.
+# This is used by FlagsMeta to detect whether the flags class currently being created is Flags.
 Flags = None
 
 
