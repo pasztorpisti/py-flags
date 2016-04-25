@@ -23,6 +23,13 @@ __author__ = 'István Pásztor'
 __license__ = 'MIT'
 
 
+def unique(flags_class):
+    if not flags_class.__member_aliases__:
+        return flags_class
+    aliases = ', '.join('%s -> %s' % (alias, name) for alias, name in flags_class.__member_aliases__.items())
+    raise ValueError('duplicate values found in %r: %s' % (flags_class, aliases))
+
+
 def _is_descriptor(obj):
     return hasattr(obj, '__get__') or hasattr(obj, '__set__') or hasattr(obj, '__delete__')
 
@@ -168,7 +175,7 @@ def _initialize_class_dict_and_create_flags_class(class_dict, class_name, create
     members_without_aliases = collections.OrderedDict()
     bits_to_properties = collections.OrderedDict()
     bits_to_instance = collections.OrderedDict()
-    member_aliases = {}
+    member_aliases = collections.OrderedDict()
     class_dict['__all_members__'] = ReadonlyDictProxy(all_members)
     class_dict['__members__'] = ReadonlyDictProxy(members)
     class_dict['__members_without_aliases__'] = ReadonlyDictProxy(members_without_aliases)

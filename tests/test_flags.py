@@ -2,7 +2,7 @@ import collections
 import re
 from unittest import TestCase
 
-from flags import Flags, FlagProperties, FlagData, _Const, _PROTECTED_FLAGS_CLASS_ATTRIBUTES
+from flags import Flags, FlagProperties, FlagData, _Const, _PROTECTED_FLAGS_CLASS_ATTRIBUTES, unique
 
 
 class TestUtilities(TestCase):
@@ -45,6 +45,28 @@ class TestUtilities(TestCase):
         self.assertEqual(properties.name, 'name2')
         self.assertEqual(properties.bits, 2)
         self.assertTrue(properties.readonly)
+
+
+class TestUniqueDecorator(TestCase):
+    def test_with_no_duplicates(self):
+        @unique
+        class MyFlags(Flags):
+            f0 = 1
+            f1 = 2
+            f2 = 4
+            f3 = 8
+            f4 = f2 | f3
+
+    def test_with_duplicates(self):
+        with self.assertRaisesRegex(ValueError,
+                                    re.escape(r"duplicate values found in <flags MyFlags>: f1 -> f0, f4 -> f2")):
+            @unique
+            class MyFlags(Flags):
+                f0 = 1
+                f1 = 1
+                f2 = 4
+                f3 = 8
+                f4 = f2
 
 
 class TestFlagsMemberDeclaration(TestCase):
