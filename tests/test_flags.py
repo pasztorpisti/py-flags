@@ -68,6 +68,19 @@ class TestUniqueDecorator(TestCase):
                 f3 = 8
                 f4 = f2
 
+    def test_all_flags_is_excluded_from_unique_check(self):
+        @unique
+        class MyFlags(Flags):
+            # all_flags is also 1 in this case
+            f0 = 1
+
+        @unique
+        class MyFlags2(Flags):
+            f0 = 1
+            f1 = 2
+            # all_flags is also 3 in this case
+            f2 = 3
+
 
 class TestFlagsMemberDeclaration(TestCase):
     """ Tests different ways of declaring the members/flags of a flags class. """
