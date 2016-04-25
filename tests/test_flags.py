@@ -226,6 +226,30 @@ class TestFlagsDeclarationErrors(TestCase):
         with self.assertRaisesRegex(ValueError, re.escape(r"Duplicate flag name: 'f1'")):
             Flags('MyFlags', 'f0 f1 f1')
 
+    def test_default_special_flag_name_conflicts_with_a_declared_flag(self):
+        with self.assertRaisesRegex(ValueError, re.escape(r"Duplicate flag name: 'no_flags'")):
+            class MyFlags(Flags):
+                no_flags = ()
+
+    def test_custom_special_flag_name_conflicts_with_a_declared_flag(self):
+        with self.assertRaisesRegex(ValueError, re.escape(r"Duplicate flag name: 'f0'")):
+            class MyFlags(Flags):
+                __no_flags_name__ = 'f0'
+                f0 = ()
+
+    def test_custom_special_flag_name_conflicts_with_anoter_custom_special_flag_name(self):
+        with self.assertRaisesRegex(ValueError, re.escape(r"Duplicate flag name: 'special_flag'")):
+            class MyFlags(Flags):
+                __no_flags_name__ = 'special_flag'
+                __all_flags_name__ = 'special_flag'
+                f0 = ()
+
+    def test_custom_special_flag_name_conflicts_with_anoter_default_special_flag_name(self):
+        with self.assertRaisesRegex(ValueError, re.escape(r"Duplicate flag name: 'all_flags'")):
+            class MyFlags(Flags):
+                __no_flags_name__ = 'all_flags'
+                f0 = ()
+
     def test_flags_class_new_alters_the_value_of_bits(self):
         with self.assertRaisesRegex(RuntimeError,
                                     r"MyFlags has altered the assigned bits of member 'f0' from 1 to 2"):
