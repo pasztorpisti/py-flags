@@ -429,6 +429,9 @@ class FlagsMeta(type):
 
         return flag_properties_list
 
+    def __repr__(cls):
+        return "<flags %s>" % cls.__name__
+
     __no_flags_name__ = 'no_flags'
     __all_flags_name__ = 'all_flags'
     __all_bits__ = -1
