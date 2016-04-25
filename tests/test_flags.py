@@ -2,7 +2,7 @@ import collections
 import re
 from unittest import TestCase
 
-from flags import Flags, FlagProperties, FlagData, _Const, _PROTECTED_FLAGS_CLASS_ATTRIBUTES, unique
+from flags import Flags, FlagProperties, FlagData, _Const, _PROTECTED_FLAGS_CLASS_ATTRIBUTES, unique, unique_bits
 
 
 class TestUtilities(TestCase):
@@ -80,6 +80,33 @@ class TestUniqueDecorator(TestCase):
             f1 = 2
             # all_flags is also 3 in this case
             f2 = 3
+
+
+class TestUniqueBitsDecorator(TestCase):
+    def test_with_no_overlapping_bits(self):
+        @unique_bits
+        class MyFlags(Flags):
+            f0 = 1
+            f1 = 2
+            f2 = 4
+            f3 = 8
+
+    def test_with_overlapping_bits(self):
+        with self.assertRaisesRegex(ValueError,
+                                    r"<flags MyFlags>: '\w+' and '\w+' have overlapping bits"):
+            @unique_bits
+            class MyFlags(Flags):
+                f0 = 1
+                f1 = 2
+                f2 = 3
+
+        with self.assertRaisesRegex(ValueError,
+                                    r"<flags MyFlags>: '\w+' and '\w+' have overlapping bits"):
+            @unique_bits
+            class MyFlags(Flags):
+                f0 = 1
+                f1 = 2
+                f2 = 5
 
 
 class TestFlagsMemberDeclaration(TestCase):
