@@ -289,6 +289,10 @@ class FlagData:
     pass
 
 
+def _is_flags_class_final(flags_class):
+    return hasattr(flags_class, '__members__')
+
+
 class FlagsMeta(type):
     def __new__(mcs, class_name, bases, class_dict):
         if '__slots__' in class_dict:
@@ -305,7 +309,7 @@ class FlagsMeta(type):
         flags_bases = [base for base in bases if issubclass(base, Flags)]
         for base in flags_bases:
             # pylint: disable=protected-access
-            if not base.__is_abstract:
+            if _is_flags_class_final(base):
                 raise RuntimeError("You can't subclass '%s' because it has already defined flag members" %
                                    (base.__name__,))
 
@@ -313,10 +317,6 @@ class FlagsMeta(type):
         if not member_definitions:
             return create_flags_class()
         return _create_flags_class_with_members(class_name, class_dict, member_definitions, create_flags_class)
-
-    @property
-    def __is_abstract(cls):
-        return not hasattr(cls, '__members__')
 
     def __call__(cls, *args, **kwargs):
         if kwargs or len(args) >= 2:
@@ -331,7 +331,7 @@ class FlagsMeta(type):
         #    2. An str object that comes from Flags.__str__() or Flags.to_simple_str()
         #    3. An int object that specifies the bits of the Flags instance to be created.
 
-        if cls.__is_abstract:
+        if not _is_flags_class_final(cls):
             raise RuntimeError("Instantiation of abstract flags class '%s.%s' isn't allowed." % (
                 cls.__module__, cls.__name__))
 
