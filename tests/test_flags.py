@@ -81,6 +81,13 @@ class TestUniqueDecorator(TestCase):
             # all_flags is also 3 in this case
             f2 = 3
 
+    def test_decorator_fails_with_non_final_flags_class(self):
+        with self.assertRaisesRegex(TypeError,
+                                    re.escape(r"unique check can be applied only to flags classes that have members")):
+            @unique
+            class MyFlags(Flags):
+                pass
+
 
 class TestUniqueBitsDecorator(TestCase):
     def test_with_no_overlapping_bits(self):
@@ -107,6 +114,13 @@ class TestUniqueBitsDecorator(TestCase):
                 f0 = 1
                 f1 = 2
                 f2 = 5
+
+    def test_decorator_fails_with_non_final_flags_class(self):
+        with self.assertRaisesRegex(TypeError,
+                                    re.escape(r"unique check can be applied only to flags classes that have members")):
+            @unique_bits
+            class MyFlags(Flags):
+                pass
 
 
 class TestFlagsMemberDeclaration(TestCase):
