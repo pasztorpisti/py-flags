@@ -55,7 +55,7 @@ setup(
         'Programming Language :: Python :: Implementation :: PyPy',
     ],
 
-    install_requires=['dictionaries'],
+    install_requires=['dictionaries==0.0.1'],
     py_modules=['flags'],
     package_dir={'': 'src'},
 
