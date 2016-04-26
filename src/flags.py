@@ -5,7 +5,7 @@ import pickle
 
 from dictionaries import ReadonlyDictProxy
 
-__all__ = ['Flags', 'FlagProperties', 'FlagData', 'UNDEFINED']
+__all__ = ['Flags', 'FlagData', 'UNDEFINED']
 
 
 # version_info[0]: Increase in case of large milestones/releases.
@@ -255,24 +255,20 @@ def _create_flags_class_with_members(class_name, class_dict, member_definitions,
     flags_class, instantiate_and_register_member = _initialize_class_dict_and_create_flags_class(
         class_dict, class_name, create_flags_class)
 
-    flag_properties_list = [FlagProperties(name=name, data=data, bits=None) for name, data in member_definitions]
-    flag_properties_list = flags_class.process_flag_properties_before_flag_creation(flag_properties_list)
-    # flag_properties_list isn't anymore guaranteed to be a list, treat it as an iterable
+    member_definitions = [(name, data) for name, data in member_definitions]
+    member_definitions = flags_class.process_member_definitions(member_definitions)
+    # member_definitions has to be an iterable of iterables yielding (name, bits, data)
 
     all_bits = 0
-    for properties in flag_properties_list:
-        if not isinstance(properties, FlagProperties):
-            raise TypeError("%s.%s returned an object that isn't an instance of %s: %r" %
-                            (flags_class.__name__, flags_class.process_flag_properties_before_flag_creation.__name__,
-                             FlagProperties.__name__, properties))
+    for name, bits, data in member_definitions:
+        properties = FlagProperties(name=name, bits=bits, data=data)
         instantiate_and_register_member(properties)
         all_bits |= properties.bits
 
     if len(flags_class) == 0:
-        # In this case process_flag_properties_before_flag_creation() returned an empty iterable which isn't allowed.
-        raise RuntimeError("%s.%s returned an iterable with zero %s instances" %
-                           (flags_class.__name__, flags_class.process_flag_properties_before_flag_creation.__name__,
-                            FlagProperties.__name__))
+        # In this case process_member_definitions() returned an empty iterable which isn't allowed.
+        raise RuntimeError("%s.%s returned an empty iterable" %
+                           (flags_class.__name__, flags_class.process_member_definitions.__name__))
 
     def instantiate_special_member(name, default_name, bits):
         name = default_name if name is None else name
@@ -418,37 +414,39 @@ class FlagsMeta(type):
         raise TypeError("Expected an int or an iterable of at most 2 items "
                         "for flag '%s', received %r" % (name, value))
 
-    def process_flag_properties_before_flag_creation(cls, flag_properties_list):
+    def process_member_definitions(cls, member_definitions):
         """
-        You can modify all of the flag properties before creation of flags instances. You can also remove/add
-        members as you wish. You can also set cls.__no_flags_name__ and cls.__all_flags_name__ at this point
-        but later they become readonly.
-
-        :param flag_properties_list: A list of FlagProperties instances. You can do anything to this
-        list: replace/remove items, totally ignore this list and return something else, etc...
-        :return: An iterable that yields FlagProperties instances. You have to set only the name, bits, and
-        optionally the value attribute of FlagProperties instances, the rest is ignored.
+        The incoming member_definitions contains the class attributes (with their values) that are
+        used to define the flag members. This method can do anything to the incoming list and has to
+        return a final set of flag definitions that assigns bits to the members. The returned member
+        definitions can be completely different or unrelated to the incoming ones.
+        :param member_definitions: A list of (name, data) tuples.
+        :return: An iterable of iterables yielding 3 items: name, bits, data
         """
+        members = []
         auto_flags = []
         all_bits = 0
-        for item in flag_properties_list:
-            item.bits, item.data = cls.flag_attribute_value_to_bits_and_data(item.name, item.data)
-            if item.bits is UNDEFINED:
-                auto_flags.append(item)
-            elif _is_valid_bits_value(item.bits):
-                all_bits |= item.bits
+        for name, data in member_definitions:
+            bits, data = cls.flag_attribute_value_to_bits_and_data(name, data)
+            if bits is UNDEFINED:
+                auto_flags.append(len(members))
+                members.append((name, data))
+            elif _is_valid_bits_value(bits):
+                all_bits |= bits
+                members.append((name, bits, data))
             else:
-                raise TypeError("Expected an int value as the bits of flag '%s', received %r" % (item.name, item.bits))
+                raise TypeError("Expected an int value as the bits of flag '%s', received %r" % (name, bits))
 
         # auto-assigning unused bits to members without custom defined bits
         bit = 1
-        for item in auto_flags:
+        for index in auto_flags:
             while bit & all_bits:
                 bit <<= 1
-            item.bits = bit
+            name, data = members[index]
+            members[index] = name, bit, data
             bit <<= 1
 
-        return flag_properties_list
+        return members
 
     def __repr__(cls):
         return "<flags %s>" % cls.__name__

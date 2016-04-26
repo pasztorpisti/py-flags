@@ -637,15 +637,16 @@ class TestFlagsClassInstantiationFromValue(TestCase):
             MyFlags(False)
 
 
-class TestProcessFlagPropertiesBeforeFlagCreation(TestCase):
+class TestProcessMemberDefinitions(TestCase):
+    """ Tests the process_member_definitions() method of the flags class. """
     def test_returned_name_isnt_a_string(self):
         with self.assertRaisesRegex(TypeError, r"Flag name should be an str but it is 123"):
             class MyFlags(Flags):
                 f0 = ()
 
                 @classmethod
-                def process_flag_properties_before_flag_creation(cls, flag_properties_list):
-                    return [FlagProperties(name=123, bits=1)]
+                def process_member_definitions(cls, member_definitions):
+                    return [(123, 1, None)]
 
     def test_returned_bits_isnt_an_int(self):
         with self.assertRaisesRegex(TypeError, r"Bits for flag 'f0' should be an int but it is 'invalid_bits'"):
@@ -653,8 +654,8 @@ class TestProcessFlagPropertiesBeforeFlagCreation(TestCase):
                 f0 = ()
 
                 @classmethod
-                def process_flag_properties_before_flag_creation(cls, flag_properties_list):
-                    return [FlagProperties(name='f0', bits='invalid_bits')]
+                def process_member_definitions(cls, member_defintions):
+                    return [['f0', 'invalid_bits', None]]
 
     def test_returned_bits_is_zero(self):
         with self.assertRaisesRegex(ValueError, r"Flag 'f0' has the invalid value of zero"):
@@ -662,29 +663,17 @@ class TestProcessFlagPropertiesBeforeFlagCreation(TestCase):
                 f0 = ()
 
                 @classmethod
-                def process_flag_properties_before_flag_creation(cls, flag_properties_list):
-                    yield FlagProperties(name='f0', bits=0)
-
-    def test_returning_non_flag_properties_instance_fails(self):
-        with self.assertRaisesRegex(TypeError,
-                                    re.escape(r"yFlags.process_flag_properties_before_flag_creation returned an object "
-                                              r"that isn't an instance of FlagProperties: None")):
-            class MyFlags(Flags):
-                f0 = ()
-
-                @classmethod
-                def process_flag_properties_before_flag_creation(cls, flag_properties_list):
-                    yield None
+                def process_member_definitions(cls, member_defintions):
+                    yield 'f0', 0, None
 
     def test_returning_empty_iterable_fails(self):
         with self.assertRaisesRegex(RuntimeError,
-                                    re.escape("MyFlags.process_flag_properties_before_flag_creation returned an "
-                                              "iterable with zero FlagProperties instances")):
+                                    re.escape("MyFlags.process_member_definitions returned an empty iterable")):
             class MyFlags(Flags):
                 f0 = ()
 
                 @classmethod
-                def process_flag_properties_before_flag_creation(cls, flag_properties_list):
+                def process_member_definitions(cls, member_definitions):
                     return ()
 
 
