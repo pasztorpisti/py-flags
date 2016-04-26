@@ -25,6 +25,8 @@ __license__ = 'MIT'
 
 def unique(flags_class):
     """ A decorator for flags classes to forbid flag aliases. """
+    if not _is_flags_class_final(flags_class):
+        raise TypeError('unique check can be applied only to flags classes that have members')
     if not flags_class.__member_aliases__:
         return flags_class
     aliases = ', '.join('%s -> %s' % (alias, name) for alias, name in flags_class.__member_aliases__.items())
