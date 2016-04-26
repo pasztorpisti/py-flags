@@ -396,6 +396,26 @@ class FlagsMeta(type):
     def __len__(cls):
         return len(cls.__members_without_aliases__)
 
+    def flag_attribute_value_to_bits_and_data(cls, name, value):
+        if value is UNDEFINED:
+            return UNDEFINED, None
+        elif isinstance(value, FlagData):
+            return UNDEFINED, value
+        elif _is_valid_bits_value(value):
+            return value, None
+        elif isinstance(value, collections.Iterable):
+            arr = tuple(value)
+            if len(arr) == 0:
+                return UNDEFINED, None
+            if len(arr) == 1:
+                return UNDEFINED, arr[0]
+            if len(arr) == 2:
+                return arr
+            raise ValueError("Iterable is expected to have at most 2 items instead of %s "
+                             "for flag '%s', iterable: %r" % (len(arr), name, value))
+        raise TypeError("Expected an int or an iterable of at most 2 items "
+                        "for flag '%s', received %r" % (name, value))
+
     def process_flag_properties_before_flag_creation(cls, flag_properties_list):
         """
         You can modify all of the flag properties before creation of flags instances. You can also remove/add
@@ -407,33 +427,10 @@ class FlagsMeta(type):
         :return: An iterable that yields FlagProperties instances. You have to set only the name, bits, and
         optionally the value attribute of FlagProperties instances, the rest is ignored.
         """
-
-        def normalize_data(properties):
-            data = properties.data
-            if data is UNDEFINED:
-                return UNDEFINED, None
-            elif isinstance(data, FlagData):
-                return UNDEFINED, data
-            elif _is_valid_bits_value(data):
-                return data, None
-            elif isinstance(data, collections.Iterable):
-                data = tuple(data)
-                if len(data) == 0:
-                    return UNDEFINED, None
-                if len(data) == 1:
-                    return UNDEFINED, data[0]
-                if len(data) == 2:
-                    return data
-                raise ValueError("Iterable is expected to have at most 2 items instead of %s "
-                                 "for flag '%s', iterable: %r" %
-                                 (len(data), properties.name, properties.data))
-            raise TypeError("Expected an int or an iterable of at most 2 items "
-                            "for flag '%s', received %r" % (properties.name, properties.data))
-
         auto_flags = []
         all_bits = 0
         for item in flag_properties_list:
-            item.bits, item.data = normalize_data(item)
+            item.bits, item.data = cls.flag_attribute_value_to_bits_and_data(item.name, item.data)
             if item.bits is UNDEFINED:
                 auto_flags.append(item)
             elif _is_valid_bits_value(item.bits):
