@@ -202,48 +202,46 @@ def _initialize_class_dict_and_create_flags_class(class_dict, class_name, create
 
     flags_class = create_flags_class(class_dict)
 
-    def instantiate_member(properties, special):
-        if not isinstance(properties.name, str):
-            raise TypeError('Flag name should be an str but it is %r' % (properties.name,))
-        if not _is_valid_bits_value(properties.bits):
-            raise TypeError("Bits for flag '%s' should be an int but it is %r" % (properties.name, properties.bits))
-        if not special and properties.bits == 0:
-            raise ValueError("Flag '%s' has the invalid value of zero" % properties.name)
-        member = flags_class(properties.bits)
-        if int(member) != properties.bits:
+    def instantiate_member(name, bits, special):
+        if not isinstance(name, str):
+            raise TypeError('Flag name should be an str but it is %r' % (name,))
+        if not _is_valid_bits_value(bits):
+            raise TypeError("Bits for flag '%s' should be an int but it is %r" % (name, bits))
+        if not special and bits == 0:
+            raise ValueError("Flag '%s' has the invalid value of zero" % name)
+        member = flags_class(bits)
+        if int(member) != bits:
             raise RuntimeError("%s has altered the assigned bits of member '%s' from %r to %r" % (
-                class_name, properties.name, properties.bits, int(member)))
+                class_name, name, bits, int(member)))
         return member
 
-    def register_member(member, properties, special):
+    def register_member(member, name, bits, data, special):
         # special members (like no_flags, and all_flags) have no index
         # and they appear only in the __all_members__ collection.
-        if all_members.setdefault(properties.name, member) is not member:
-            raise ValueError('Duplicate flag name: %r' % properties.name)
+        if all_members.setdefault(name, member) is not member:
+            raise ValueError('Duplicate flag name: %r' % name)
 
         # It isn't a problem if an instance with the same bits already exists in bits_to_instance because
         # a member contains only the bits so our new member is equivalent with the replaced one.
-        bits_to_instance[properties.bits] = member
+        bits_to_instance[bits] = member
 
-        properties.index = None
-        properties.index_without_aliases = None
-        if not special:
-            properties.index = len(members)
-            members[properties.name] = member
-            properties_for_bits = bits_to_properties.setdefault(properties.bits, properties)
-            is_alias = properties_for_bits is not properties
-            if is_alias:
-                member_aliases[properties.name] = properties_for_bits.name
-            else:
-                properties.index_without_aliases = len(members_without_aliases)
-                members_without_aliases[properties.name] = member
+        if special:
+            return
 
-        if not properties.readonly:
-            properties.readonly = True
+        members[name] = member
+        properties = FlagProperties(name=name, bits=bits, data=data, index=len(members))
+        properties_for_bits = bits_to_properties.setdefault(bits, properties)
+        is_alias = properties_for_bits is not properties
+        if is_alias:
+            member_aliases[name] = properties_for_bits.name
+        else:
+            properties.index_without_aliases = len(members_without_aliases)
+            members_without_aliases[name] = member
+        properties.readonly = True
 
-    def instantiate_and_register_member(properties, special_member=False):
-        member = instantiate_member(properties, special_member)
-        register_member(member, properties, special_member)
+    def instantiate_and_register_member(*, name, bits, data=None, special_member=False):
+        member = instantiate_member(name, bits, special_member)
+        register_member(member, name, bits, data, special_member)
         return member
 
     return flags_class, instantiate_and_register_member
@@ -261,9 +259,8 @@ def _create_flags_class_with_members(class_name, class_dict, member_definitions,
 
     all_bits = 0
     for name, bits, data in member_definitions:
-        properties = FlagProperties(name=name, bits=bits, data=data)
-        instantiate_and_register_member(properties)
-        all_bits |= properties.bits
+        instantiate_and_register_member(name=name, bits=bits, data=data)
+        all_bits |= bits
 
     if len(flags_class) == 0:
         # In this case process_member_definitions() returned an empty iterable which isn't allowed.
@@ -272,7 +269,7 @@ def _create_flags_class_with_members(class_name, class_dict, member_definitions,
 
     def instantiate_special_member(name, default_name, bits):
         name = default_name if name is None else name
-        return instantiate_and_register_member(FlagProperties(name=name, bits=bits), special_member=True)
+        return instantiate_and_register_member(name=name, bits=bits, special_member=True)
 
     flags_class.__no_flags__ = instantiate_special_member(flags_class.__no_flags_name__, '__no_flags__', 0)
     flags_class.__all_flags__ = instantiate_special_member(flags_class.__all_flags_name__, '__all_flags__', all_bits)
