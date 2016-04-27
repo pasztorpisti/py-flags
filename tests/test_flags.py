@@ -2,7 +2,8 @@ import collections
 import re
 from unittest import TestCase
 
-from flags import Flags, FlagProperties, FlagData, _Const, _PROTECTED_FLAGS_CLASS_ATTRIBUTES, unique, unique_bits
+from flags import Flags, FlagProperties, FlagData, _Const, _PROTECTED_FLAGS_CLASS_ATTRIBUTES, unique, unique_bits, \
+    UNDEFINED
 
 
 class TestUtilities(TestCase):
@@ -337,6 +338,17 @@ class TestFlagsMemberDeclaration(TestCase):
 
 
 class TestFlagsDeclarationErrors(TestCase):
+    def test_alias_declares_data(self):
+        with self.assertRaisesRegex(ValueError, re.escape(r"You aren't allowed to associate data with alias 'f2'")):
+            class MyFlags(Flags):
+                f0 = 1
+                f2 = 1, None
+
+        with self.assertRaisesRegex(ValueError, re.escape(r"You aren't allowed to associate data with alias 'f2'")):
+            class MyFlags(Flags):
+                f0 = 1
+                f2 = 1, 'data'
+
     def test_duplicate_flag_name_in_member_names_string(self):
         with self.assertRaisesRegex(ValueError, re.escape(r"Duplicate flag name: 'f1'")):
             Flags('MyFlags', 'f0 f1 f1')
@@ -448,9 +460,9 @@ class TestAutoAssignedBits(TestCase):
             f2 = 0b010
 
         self.assertListEqual([int(MyFlags.f0), int(MyFlags.f1), int(MyFlags.f2)], [0b001, 0b100, 0b010])
-        self.assertIsNone(MyFlags.f0.data)
+        self.assertIs(MyFlags.f0.data, UNDEFINED)
         self.assertIs(MyFlags.f1.data, my_flag_data)
-        self.assertIsNone(MyFlags.f2.data)
+        self.assertIs(MyFlags.f2.data, UNDEFINED)
 
     def test_auto_assign_with_empty_tuple(self):
         class MyFlags(Flags):
@@ -459,9 +471,9 @@ class TestAutoAssignedBits(TestCase):
             f2 = 0b1000
 
         self.assertListEqual([int(MyFlags.f0), int(MyFlags.f1), int(MyFlags.f2)], [0b0011, 0b0100, 0b1000])
-        self.assertIsNone(MyFlags.f0.data)
-        self.assertIsNone(MyFlags.f1.data)
-        self.assertIsNone(MyFlags.f2.data)
+        self.assertIs(MyFlags.f0.data, UNDEFINED)
+        self.assertIs(MyFlags.f1.data, UNDEFINED)
+        self.assertIs(MyFlags.f2.data, UNDEFINED)
 
     def test_auto_assign_with_empty_list(self):
         class MyFlags(Flags):
@@ -470,9 +482,9 @@ class TestAutoAssignedBits(TestCase):
             f2 = 0b0110
 
         self.assertListEqual([int(MyFlags.f0), int(MyFlags.f1), int(MyFlags.f2)], [0b0011, 0b1000, 0b0110])
-        self.assertIsNone(MyFlags.f0.data)
-        self.assertIsNone(MyFlags.f1.data)
-        self.assertIsNone(MyFlags.f2.data)
+        self.assertIs(MyFlags.f0.data, UNDEFINED)
+        self.assertIs(MyFlags.f1.data, UNDEFINED)
+        self.assertIs(MyFlags.f2.data, UNDEFINED)
 
 
 class TestFlagsInheritance(TestCase):

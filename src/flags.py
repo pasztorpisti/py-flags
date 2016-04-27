@@ -233,6 +233,8 @@ def _initialize_class_dict_and_create_flags_class(class_dict, class_name, create
         properties_for_bits = bits_to_properties.setdefault(bits, properties)
         is_alias = properties_for_bits is not properties
         if is_alias:
+            if data is not UNDEFINED:
+                raise ValueError("You aren't allowed to associate data with alias '%s'" % name)
             member_aliases[name] = properties_for_bits.name
         else:
             properties.index_without_aliases = len(members_without_aliases)
@@ -393,15 +395,15 @@ class FlagsMeta(type):
 
     def flag_attribute_value_to_bits_and_data(cls, name, value):
         if value is UNDEFINED:
-            return UNDEFINED, None
+            return UNDEFINED, UNDEFINED
         elif isinstance(value, FlagData):
             return UNDEFINED, value
         elif _is_valid_bits_value(value):
-            return value, None
+            return value, UNDEFINED
         elif isinstance(value, collections.Iterable):
             arr = tuple(value)
             if len(arr) == 0:
-                return UNDEFINED, None
+                return UNDEFINED, UNDEFINED
             if len(arr) == 1:
                 return UNDEFINED, arr[0]
             if len(arr) == 2:
