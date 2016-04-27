@@ -93,4 +93,5 @@ class TestPickleIntFlags(TestCase):
         cls, args = FlagsWithPickleIntFlags.f0.__reduce_ex__(4)
         self.assertIs(cls, FlagsWithPickleIntFlags)
         self.assertEqual(len(args), 1)
+        self.assertIs(type(args[0]), int)
         self.assertEqual(args[0], int(FlagsWithPickleIntFlags.f0))
