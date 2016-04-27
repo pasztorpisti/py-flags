@@ -62,3 +62,35 @@ class PicklingFailure(TestCase):
 
     def test_pickling_fails_with_dynamically_created_inner_class_without_qualname(self):
         self.assertRaises(pickle.PicklingError, pickle.dumps, self.DynamicInnerFlags.f0)
+
+
+class FlagsWithPickleIntFlags(Flags):
+    __pickle_int_flags__ = True
+    f0 = ['data0']
+    f1 = ['data1']
+    f2 = ['data2']
+    f3 = ['data3']
+
+
+class PicklingFlagsWtihPickleIntFlagsSetToTrue(test_base.PicklingSuccessTestBase):
+    FlagsClass = FlagsWithPickleIntFlags
+
+
+class TestPickleIntFlags(TestCase):
+    def test_pickle_int_flags_is_false_by_default(self):
+        self.assertFalse(ModuleScopeFlags.__pickle_int_flags__)
+
+    def test_picle_int_flags_can_be_set_to_true(self):
+        self.assertTrue(FlagsWithPickleIntFlags.__pickle_int_flags__)
+
+    def test_reduce_ex_returns_string_when_pickle_int_flags_is_false(self):
+        cls, args = ModuleScopeFlags.f0.__reduce_ex__(4)
+        self.assertIs(cls, ModuleScopeFlags)
+        self.assertEqual(len(args), 1)
+        self.assertEqual(args[0], ModuleScopeFlags.f0.to_simple_str())
+
+    def test_reduce_ex_returns_int_when_pickle_int_flags_is_true(self):
+        cls, args = FlagsWithPickleIntFlags.f0.__reduce_ex__(4)
+        self.assertIs(cls, FlagsWithPickleIntFlags)
+        self.assertEqual(len(args), 1)
+        self.assertEqual(args[0], int(FlagsWithPickleIntFlags.f0))

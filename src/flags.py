@@ -168,7 +168,7 @@ class FlagProperties(ReadonlyzerMixin):
 
 _READONLY_PROTECTED_FLAGS_CLASS_ATTRIBUTES = frozenset([
     '__writable_protected_flags_class_attributes__', '__all_members__', '__members__', '__members_without_aliases__',
-    '__member_aliases__', '__bits_to_properties__', '__bits_to_instance__',
+    '__member_aliases__', '__bits_to_properties__', '__bits_to_instance__', '__pickle_int_flags__',
 ])
 
 # these attributes are writable when __writable_protected_flags_class_attributes__ is set to True on the class.
@@ -450,6 +450,7 @@ class FlagsMeta(type):
 
     __no_flags_name__ = 'no_flags'
     __all_flags_name__ = 'all_flags'
+    __pickle_int_flags__ = False
     __all_bits__ = -1
 
     # TODO: utility method to fill the flag members to a namespace, and another utility that can fill
@@ -616,7 +617,8 @@ class Flags(FlagsArithmeticMixin, metaclass=FlagsMeta):
         return int(self) ^ hash(type(self))
 
     def __reduce_ex__(self, proto):
-        return type(self), (self.to_simple_str(),)
+        value = int(self) if type(self).__pickle_int_flags__ else self.to_simple_str()
+        return type(self), (value,)
 
     def __str__(self):
         # Warning: The output of this method has to be a string that can be processed by bits_from_str

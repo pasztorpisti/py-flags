@@ -8,6 +8,8 @@ Future version
 
 *Release date: future*
 
+- Added the ``__pickle_int_flags__`` class attribute that can be set to ``True`` in order to force pickle to save
+  the ``int`` representation of flags instead of the default ``to_simple_str()`` representation.
 - Added the ``@unique_bits`` decorator that can be used to forbid overlapping bits between the values of flags.
 - Added the ``@unique`` decorator that can be used to forbid aliases in a flags class. (An alias is a flag that
   has the exact same value as a previously declared flag.)
