@@ -922,6 +922,9 @@ class TestFlagsInstanceMethods(TestCase):
         self.assertEqual(self.MyFlags.f0 | self.MyFlags.f2, self.MyFlags.from_simple_str('f0|f2'))
         self.assertEqual(self.MyFlags.f1 | self.MyFlags.f2, self.MyFlags.from_simple_str('f1|f2'))
 
+        with self.assertRaisesRegex(TypeError, re.escape(r"Expected an str instance, received 42")):
+            self.MyFlags.from_simple_str(42)
+
     def test_bits_from_simple_str(self):
         self.assertEqual(0, self.MyFlags.bits_from_simple_str(''))
         self.assertEqual(7, self.MyFlags.bits_from_simple_str('f0|f1|f2'))

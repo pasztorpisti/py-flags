@@ -642,13 +642,17 @@ class Flags(FlagsArithmeticMixin, metaclass=FlagsMeta):
 
     @classmethod
     def from_simple_str(cls, s):
+        """ Accepts only the output of to_simple_str(). The output of __str__() is invalid as input. """
+        if not isinstance(s, str):
+            raise TypeError("Expected an str instance, received %r" % (s,))
         return cls(cls.bits_from_simple_str(s))
 
     @classmethod
     def from_str(cls, s):
+        """ Accepts both the output of to_simple_str() and __str__(). """
         if not isinstance(s, str):
             raise TypeError("Expected an str instance, received %r" % (s,))
-        return cls(s)
+        return cls(cls.bits_from_str(s))
 
     @classmethod
     def bits_from_simple_str(cls, s):
