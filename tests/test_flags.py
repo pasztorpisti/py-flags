@@ -744,6 +744,11 @@ class TestFlagsInstanceMethods(TestCase):
         f1 = ['data1']
         f2 = ['data2']
 
+    class NoDottedSingleFlagStr(Flags):
+        __dotted_single_flag_str__ = False
+        f0 = ()
+        f1 = ()
+
     def test_is_member(self):
         self.assertFalse(self.MyFlags.no_flags.is_member)
         self.assertFalse(self.MyFlags.all_flags.is_member)
@@ -856,6 +861,13 @@ class TestFlagsInstanceMethods(TestCase):
         self.assertEqual(repr(self.MyFlags.f0 | self.MyFlags.f2), '<MyFlags(f0|f2) bits=0x0005>')
         self.assertEqual(repr(self.MyFlags.f1 | self.MyFlags.f2), '<MyFlags(f1|f2) bits=0x0006>')
 
+        self.assertEqual(repr(self.NoDottedSingleFlagStr.no_flags), '<NoDottedSingleFlagStr() bits=0x0000>')
+        self.assertEqual(repr(self.NoDottedSingleFlagStr.all_flags), '<NoDottedSingleFlagStr(f0|f1) bits=0x0003>')
+        self.assertEqual(repr(self.NoDottedSingleFlagStr.f0), "<NoDottedSingleFlagStr(f0) bits=0x0001 data=UNDEFINED>")
+        self.assertEqual(repr(self.NoDottedSingleFlagStr.f1), "<NoDottedSingleFlagStr(f1) bits=0x0002 data=UNDEFINED>")
+        self.assertEqual(repr(self.NoDottedSingleFlagStr.f0 | self.NoDottedSingleFlagStr.f1),
+                         '<NoDottedSingleFlagStr(f0|f1) bits=0x0003>')
+
     def test_str(self):
         self.assertEqual(str(self.MyFlags.no_flags), 'MyFlags()')
         self.assertEqual(str(self.MyFlags.all_flags), 'MyFlags(f0|f1|f2)')
@@ -865,6 +877,13 @@ class TestFlagsInstanceMethods(TestCase):
         self.assertEqual(str(self.MyFlags.f0 | self.MyFlags.f1), 'MyFlags(f0|f1)')
         self.assertEqual(str(self.MyFlags.f0 | self.MyFlags.f2), 'MyFlags(f0|f2)')
         self.assertEqual(str(self.MyFlags.f1 | self.MyFlags.f2), 'MyFlags(f1|f2)')
+
+        self.assertEqual(str(self.NoDottedSingleFlagStr.no_flags), 'NoDottedSingleFlagStr()')
+        self.assertEqual(str(self.NoDottedSingleFlagStr.all_flags), 'NoDottedSingleFlagStr(f0|f1)')
+        self.assertEqual(str(self.NoDottedSingleFlagStr.f0), 'NoDottedSingleFlagStr(f0)')
+        self.assertEqual(str(self.NoDottedSingleFlagStr.f1), 'NoDottedSingleFlagStr(f1)')
+        self.assertEqual(str(self.NoDottedSingleFlagStr.f0 | self.NoDottedSingleFlagStr.f1),
+                         'NoDottedSingleFlagStr(f0|f1)')
 
     def test_from_str(self):
         self.assertEqual(self.MyFlags.no_flags, self.MyFlags.from_str('MyFlags()'))

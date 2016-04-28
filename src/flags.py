@@ -452,6 +452,7 @@ class FlagsMeta(type):
 
     __no_flags_name__ = 'no_flags'
     __all_flags_name__ = 'all_flags'
+    __dotted_single_flag_str__ = True
     __pickle_int_flags__ = False
     __all_bits__ = -1
 
@@ -623,7 +624,12 @@ class Flags(FlagsArithmeticMixin, metaclass=FlagsMeta):
         return type(self), (value,)
 
     def __str__(self):
-        # Warning: The output of this method has to be a string that can be processed by bits_from_str
+        # Warning: The output of this method has to be a string that can be processed by bits_from_str()
+        return self.__internal_str()
+
+    def __internal_str(self):
+        if not type(self).__dotted_single_flag_str__:
+            return '%s(%s)' % (type(self).__name__, self.to_simple_str())
         properties = self.properties
         if properties is None:
             # this is a set of flags as a result of arithmetic
@@ -634,8 +640,8 @@ class Flags(FlagsArithmeticMixin, metaclass=FlagsMeta):
         properties = self.properties
         if properties is None:
             # this is a set of flags as a result of arithmetic
-            return '<%s(%s) bits=0x%04X>' % (type(self).__name__, self.to_simple_str(), int(self))
-        return '<%s.%s bits=0x%04X data=%r>' % (type(self).__name__, properties.name, properties.bits, properties.data)
+            return '<%s bits=0x%04X>' % (self.__internal_str(), int(self))
+        return '<%s bits=0x%04X data=%r>' % (self.__internal_str(), properties.bits, properties.data)
 
     def to_simple_str(self):
         return '|'.join(member.name for member in self)

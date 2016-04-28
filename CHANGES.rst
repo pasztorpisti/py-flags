@@ -8,6 +8,7 @@ Future version
 
 *Release date: future*
 
+- Added ``Flags.__dotted_single_flag_str__``.
 - The ``Flags.data`` property returns ``UNDEFINED`` for special flags and flag combinations.
 - Added the ``__pickle_int_flags__`` class attribute that can be set to ``True`` in order to force pickle to save
   the ``int`` representation of flags instead of the default ``to_simple_str()`` representation.
