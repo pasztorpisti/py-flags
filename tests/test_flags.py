@@ -775,14 +775,14 @@ class TestFlagsInstanceMethods(TestCase):
         self.assertIsNone((self.MyFlags.f1 | self.MyFlags.f2).name)
 
     def test_data(self):
-        self.assertIsNone(self.MyFlags.no_flags.data)
-        self.assertIsNone(self.MyFlags.all_flags.data)
+        self.assertIs(self.MyFlags.no_flags.data, UNDEFINED)
+        self.assertIs(self.MyFlags.all_flags.data, UNDEFINED)
         self.assertEqual(self.MyFlags.f0.data, 'data0')
         self.assertEqual(self.MyFlags.f1.data, 'data1')
         self.assertEqual(self.MyFlags.f2.data, 'data2')
-        self.assertIsNone((self.MyFlags.f0 | self.MyFlags.f1).data)
-        self.assertIsNone((self.MyFlags.f0 | self.MyFlags.f2).data)
-        self.assertIsNone((self.MyFlags.f1 | self.MyFlags.f2).data)
+        self.assertIs((self.MyFlags.f0 | self.MyFlags.f1).data, UNDEFINED)
+        self.assertIs((self.MyFlags.f0 | self.MyFlags.f2).data, UNDEFINED)
+        self.assertIs((self.MyFlags.f1 | self.MyFlags.f2).data, UNDEFINED)
 
     def test_getattr(self):
         flags = self.MyFlags.f0

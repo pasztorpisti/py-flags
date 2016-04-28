@@ -595,7 +595,7 @@ class Flags(FlagsArithmeticMixin, metaclass=FlagsMeta):
     @property
     def data(self):
         properties = self.properties
-        return self.properties.data if properties else None
+        return self.properties.data if properties else UNDEFINED
 
     def __getattr__(self, name):
         try:
