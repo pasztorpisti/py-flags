@@ -3,6 +3,14 @@ CHANGES
 =======
 
 
+Future version
+--------------
+
+*Release date: future*
+
+- Fix: added the ``@unique`` and ``@unique_bits`` decorators to the ``__all__`` list of the flags module.
+
+
 v1.1.0
 ------
 

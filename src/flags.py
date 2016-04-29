@@ -5,7 +5,7 @@ import pickle
 
 from dictionaries import ReadonlyDictProxy
 
-__all__ = ['Flags', 'FlagData', 'UNDEFINED']
+__all__ = ['Flags', 'FlagData', 'UNDEFINED', 'unique', 'unique_bits']
 
 
 # version_info[0]: Increase in case of large milestones/releases.
