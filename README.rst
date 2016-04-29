@@ -106,7 +106,7 @@ Flags have human readable string representations and ``repr`` with more info:
     >>> print(TextStyle.bold)
     TextStyle.bold
     >>> print(repr(TextStyle.bold))
-    <TextStyle.bold bits=0x0001 data=None>
+    <TextStyle.bold bits=0x0001 data=UNDEFINED>
 
 The type of a flag is the flags class it belongs to:
 
@@ -214,9 +214,9 @@ You can convert the ``int()`` and ``str()`` representations of flags back into f
 .. code-block:: python
 
     >>> TextStyle(2)
-    <TextStyle.italic bits=0x0002 data=None>
+    <TextStyle.italic bits=0x0002 data=UNDEFINED>
     >>> TextStyle('TextStyle.bold')
-    <TextStyle.bold bits=0x0001 data=None>
+    <TextStyle.bold bits=0x0001 data=UNDEFINED>
 
 
 Flags type VS builtin python types
