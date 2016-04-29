@@ -630,18 +630,21 @@ class Flags(FlagsArithmeticMixin, metaclass=FlagsMeta):
     def __internal_str(self):
         if not type(self).__dotted_single_flag_str__:
             return '%s(%s)' % (type(self).__name__, self.to_simple_str())
-        properties = self.properties
-        if properties is None:
-            # this is a set of flags as a result of arithmetic
-            return '%s(%s)' % (type(self).__name__, self.to_simple_str())
-        return '%s.%s' % (type(self).__name__, properties.name)
+        contained_flags = list(self)
+        if len(contained_flags) != 1:
+            # This is the zero flag or a set of flags (as a result of arithmetic)
+            # or a flags class member that is a superset of another flags member.
+            return '%s(%s)' % (type(self).__name__, '|'.join(member.name for member in contained_flags))
+        return '%s.%s' % (type(self).__name__, contained_flags[0].properties.name)
 
     def __repr__(self):
-        properties = self.properties
-        if properties is None:
-            # this is a set of flags as a result of arithmetic
+        contained_flags = list(self)
+        if len(contained_flags) != 1:
+            # This is the zero flag or a set of flags (as a result of arithmetic)
+            # or a flags class member that is a superset of another flags member.
             return '<%s bits=0x%04X>' % (self.__internal_str(), int(self))
-        return '<%s bits=0x%04X data=%r>' % (self.__internal_str(), properties.bits, properties.data)
+        return '<%s bits=0x%04X data=%r>' % (self.__internal_str(), contained_flags[0].properties.bits,
+                                             contained_flags[0].properties.data)
 
     def to_simple_str(self):
         return '|'.join(member.name for member in self)

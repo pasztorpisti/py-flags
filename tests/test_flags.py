@@ -749,6 +749,11 @@ class TestFlagsInstanceMethods(TestCase):
         f0 = ()
         f1 = ()
 
+    class SubsetFlag(Flags):
+        # f1 is a proper/strict subset of f3
+        f1 = 1
+        f3 = 3
+
     def test_is_member(self):
         self.assertFalse(self.MyFlags.no_flags.is_member)
         self.assertFalse(self.MyFlags.all_flags.is_member)
@@ -868,6 +873,8 @@ class TestFlagsInstanceMethods(TestCase):
         self.assertEqual(repr(self.NoDottedSingleFlagStr.f0 | self.NoDottedSingleFlagStr.f1),
                          '<NoDottedSingleFlagStr(f0|f1) bits=0x0003>')
 
+        self.assertEqual(repr(self.SubsetFlag.f3), '<SubsetFlag(f1|f3) bits=0x0003>')
+
     def test_str(self):
         self.assertEqual(str(self.MyFlags.no_flags), 'MyFlags()')
         self.assertEqual(str(self.MyFlags.all_flags), 'MyFlags(f0|f1|f2)')
@@ -884,6 +891,8 @@ class TestFlagsInstanceMethods(TestCase):
         self.assertEqual(str(self.NoDottedSingleFlagStr.f1), 'NoDottedSingleFlagStr(f1)')
         self.assertEqual(str(self.NoDottedSingleFlagStr.f0 | self.NoDottedSingleFlagStr.f1),
                          'NoDottedSingleFlagStr(f0|f1)')
+
+        self.assertEqual(str(self.SubsetFlag.f3), 'SubsetFlag(f1|f3)')
 
     def test_from_str(self):
         self.assertEqual(self.MyFlags.no_flags, self.MyFlags.from_str('MyFlags()'))
