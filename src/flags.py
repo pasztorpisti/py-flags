@@ -25,7 +25,7 @@ __license__ = 'MIT'
 
 def unique(flags_class):
     """ A decorator for flags classes to forbid flag aliases. """
-    if not _is_flags_class_final(flags_class):
+    if not is_flags_class_final(flags_class):
         raise TypeError('unique check can be applied only to flags classes that have members')
     if not flags_class.__member_aliases__:
         return flags_class
@@ -47,11 +47,11 @@ def unique_bits(flags_class):
             other_bits |= bits
 
 
-def _is_descriptor(obj):
+def is_descriptor(obj):
     return hasattr(obj, '__get__') or hasattr(obj, '__set__') or hasattr(obj, '__delete__')
 
 
-class _Const:
+class Const:
     def __init__(self, name):
         self.__name = name
 
@@ -60,11 +60,11 @@ class _Const:
 
 
 # "singleton" to be used as a const value with identity checks
-UNDEFINED = _Const('UNDEFINED')
+UNDEFINED = Const('UNDEFINED')
 
 
-def _create_flags_subclass(base_enum_class, class_name, flags, *, mixins=(), module=None, qualname=None,
-                           no_flags_name=UNDEFINED, all_flags_name=UNDEFINED):
+def create_flags_subclass(base_enum_class, class_name, flags, *, mixins=(), module=None, qualname=None,
+                          no_flags_name=UNDEFINED, all_flags_name=UNDEFINED):
     meta_class = type(base_enum_class)
     bases = tuple(mixins) + (base_enum_class,)
     class_dict = {'__members__': flags}
@@ -92,7 +92,7 @@ def _create_flags_subclass(base_enum_class, class_name, flags, *, mixins=(), mod
     return flags_class
 
 
-def _process_inline_members_definition(members):
+def process_inline_members_definition(members):
     """
     :param members: this can be any of the following:
     - a string containing a space and/or comma separated list of names: e.g.:
@@ -112,13 +112,13 @@ def _process_inline_members_definition(members):
     return members
 
 
-def _extract_member_definitions_from_class_attributes(class_dict):
+def extract_member_definitions_from_class_attributes(class_dict):
     members = [(name, data) for name, data in class_dict.items()
-               if not name.startswith('_') and not _is_descriptor(data)]
+               if not name.startswith('_') and not is_descriptor(data)]
     for name, _ in members:
         del class_dict[name]
 
-    members.extend(_process_inline_members_definition(class_dict.pop('__members__', ())))
+    members.extend(process_inline_members_definition(class_dict.pop('__members__', ())))
     return members
 
 
@@ -166,25 +166,25 @@ class FlagProperties(ReadonlyzerMixin):
         super().__init__()
 
 
-_READONLY_PROTECTED_FLAGS_CLASS_ATTRIBUTES = frozenset([
+READONLY_PROTECTED_FLAGS_CLASS_ATTRIBUTES = frozenset([
     '__writable_protected_flags_class_attributes__', '__all_members__', '__members__', '__members_without_aliases__',
     '__member_aliases__', '__bits_to_properties__', '__bits_to_instance__', '__pickle_int_flags__',
 ])
 
 # these attributes are writable when __writable_protected_flags_class_attributes__ is set to True on the class.
-_TEMPORARILY_WRITABLE_PROTECTED_FLAGS_CLASS_ATTRIBUTES = frozenset([
+TEMPORARILY_WRITABLE_PROTECTED_FLAGS_CLASS_ATTRIBUTES = frozenset([
     '__all_bits__', '__no_flags__', '__all_flags__', '__no_flags_name__', '__all_flags_name__',
 ])
 
-_PROTECTED_FLAGS_CLASS_ATTRIBUTES = _READONLY_PROTECTED_FLAGS_CLASS_ATTRIBUTES | \
-                                    _TEMPORARILY_WRITABLE_PROTECTED_FLAGS_CLASS_ATTRIBUTES
+PROTECTED_FLAGS_CLASS_ATTRIBUTES = READONLY_PROTECTED_FLAGS_CLASS_ATTRIBUTES | \
+                                   TEMPORARILY_WRITABLE_PROTECTED_FLAGS_CLASS_ATTRIBUTES
 
 
-def _is_valid_bits_value(bits):
+def is_valid_bits_value(bits):
     return isinstance(bits, int) and not isinstance(bits, bool)
 
 
-def _initialize_class_dict_and_create_flags_class(class_dict, class_name, create_flags_class):
+def initialize_class_dict_and_create_flags_class(class_dict, class_name, create_flags_class):
     # all_members is used by __getattribute__ and __setattr__. It contains all items
     # from members and also the no_flags and all_flags special members if they are defined.
     all_members = collections.OrderedDict()
@@ -205,7 +205,7 @@ def _initialize_class_dict_and_create_flags_class(class_dict, class_name, create
     def instantiate_member(name, bits, special):
         if not isinstance(name, str):
             raise TypeError('Flag name should be an str but it is %r' % (name,))
-        if not _is_valid_bits_value(bits):
+        if not is_valid_bits_value(bits):
             raise TypeError("Bits for flag '%s' should be an int but it is %r" % (name, bits))
         if not special and bits == 0:
             raise ValueError("Flag '%s' has the invalid value of zero" % name)
@@ -249,10 +249,10 @@ def _initialize_class_dict_and_create_flags_class(class_dict, class_name, create
     return flags_class, instantiate_and_register_member
 
 
-def _create_flags_class_with_members(class_name, class_dict, member_definitions, create_flags_class):
+def create_flags_class_with_members(class_name, class_dict, member_definitions, create_flags_class):
     class_dict['__writable_protected_flags_class_attributes__'] = True
 
-    flags_class, instantiate_and_register_member = _initialize_class_dict_and_create_flags_class(
+    flags_class, instantiate_and_register_member = initialize_class_dict_and_create_flags_class(
         class_dict, class_name, create_flags_class)
 
     member_definitions = [(name, data) for name, data in member_definitions]
@@ -286,7 +286,7 @@ class FlagData:
     pass
 
 
-def _is_flags_class_final(flags_class):
+def is_flags_class_final(flags_class):
     return hasattr(flags_class, '__members__')
 
 
@@ -306,20 +306,20 @@ class FlagsMeta(type):
         flags_bases = [base for base in bases if issubclass(base, Flags)]
         for base in flags_bases:
             # pylint: disable=protected-access
-            if _is_flags_class_final(base):
+            if is_flags_class_final(base):
                 raise RuntimeError("You can't subclass '%s' because it has already defined flag members" %
                                    (base.__name__,))
 
-        member_definitions = _extract_member_definitions_from_class_attributes(class_dict)
+        member_definitions = extract_member_definitions_from_class_attributes(class_dict)
         if not member_definitions:
             return create_flags_class()
-        return _create_flags_class_with_members(class_name, class_dict, member_definitions, create_flags_class)
+        return create_flags_class_with_members(class_name, class_dict, member_definitions, create_flags_class)
 
     def __call__(cls, *args, **kwargs):
         if kwargs or len(args) >= 2:
             # The Flags class or one of its subclasses was "called" as a
             # utility function to create a subclass of the called class.
-            return _create_flags_subclass(cls, *args, **kwargs)
+            return create_flags_subclass(cls, *args, **kwargs)
 
         # We have zero or one positional argument and we have to create and/or return an exact instance of cls.
         # 1. Zero argument means we have to return a zero flag.
@@ -328,7 +328,7 @@ class FlagsMeta(type):
         #    2. An str object that comes from Flags.__str__() or Flags.to_simple_str()
         #    3. An int object that specifies the bits of the Flags instance to be created.
 
-        if not _is_flags_class_final(cls):
+        if not is_flags_class_final(cls):
             raise RuntimeError("Instantiation of abstract flags class '%s.%s' isn't allowed." % (
                 cls.__module__, cls.__name__))
 
@@ -345,7 +345,7 @@ class FlagsMeta(type):
         if isinstance(value, str):
             # case 2.2
             bits = cls.bits_from_str(value)
-        elif _is_valid_bits_value(value):
+        elif is_valid_bits_value(value):
             # case 2.3
             bits = cls.__all_bits__ & value
         else:
@@ -361,14 +361,14 @@ class FlagsMeta(type):
         return collections.OrderedDict()
 
     def __delattr__(cls, name):
-        if (name in _PROTECTED_FLAGS_CLASS_ATTRIBUTES and name != '__writable_protected_flags_class_attributes__') or\
+        if (name in PROTECTED_FLAGS_CLASS_ATTRIBUTES and name != '__writable_protected_flags_class_attributes__') or\
                 (name in getattr(cls, '__all_members__', {})):
             raise AttributeError("Can't delete protected attribute '%s'" % name)
         super().__delattr__(name)
 
     def __setattr__(cls, name, value):
-        if name in _PROTECTED_FLAGS_CLASS_ATTRIBUTES:
-            if name in _READONLY_PROTECTED_FLAGS_CLASS_ATTRIBUTES or\
+        if name in PROTECTED_FLAGS_CLASS_ATTRIBUTES:
+            if name in READONLY_PROTECTED_FLAGS_CLASS_ATTRIBUTES or\
                     not getattr(cls, '__writable_protected_flags_class_attributes__', False):
                 raise AttributeError("Can't assign protected attribute '%s'" % name)
         elif name in getattr(cls, '__all_members__', {}):
@@ -398,7 +398,7 @@ class FlagsMeta(type):
             return UNDEFINED, UNDEFINED
         elif isinstance(value, FlagData):
             return UNDEFINED, value
-        elif _is_valid_bits_value(value):
+        elif is_valid_bits_value(value):
             return value, UNDEFINED
         elif isinstance(value, collections.Iterable):
             arr = tuple(value)
@@ -430,7 +430,7 @@ class FlagsMeta(type):
             if bits is UNDEFINED:
                 auto_flags.append(len(members))
                 members.append((name, data))
-            elif _is_valid_bits_value(bits):
+            elif is_valid_bits_value(bits):
                 all_bits |= bits
                 members.append((name, bits, data))
             else:

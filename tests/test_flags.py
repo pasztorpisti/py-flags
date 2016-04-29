@@ -2,14 +2,14 @@ import collections
 import re
 from unittest import TestCase
 
-from flags import Flags, FlagProperties, FlagData, _Const, _PROTECTED_FLAGS_CLASS_ATTRIBUTES, UNDEFINED
+from flags import Flags, FlagProperties, FlagData, Const, PROTECTED_FLAGS_CLASS_ATTRIBUTES, UNDEFINED
 
 
 class TestUtilities(TestCase):
     """ Testing utility functions and other random stuff to satisfy coverage and make its output more useful. """
     def test_const_repr(self):
-        self.assertEqual(repr(_Const('name1')), 'name1')
-        self.assertEqual(repr(_Const('name2')), 'name2')
+        self.assertEqual(repr(Const('name1')), 'name1')
+        self.assertEqual(repr(Const('name2')), 'name2')
 
     def test_readonly_attribute_of_flag_properties(self):
         properties = FlagProperties(name='name', bits=1)
@@ -638,7 +638,7 @@ class TestFlagsClassMethods(TestCase):
         self.assertEqual(repr(self.MyFlags), '<flags MyFlags>')
 
     def test_setattr_fails_with_protected_class_members(self):
-        for attribute in _PROTECTED_FLAGS_CLASS_ATTRIBUTES | set(self.MyFlags.__all_members__.keys()):
+        for attribute in PROTECTED_FLAGS_CLASS_ATTRIBUTES | set(self.MyFlags.__all_members__.keys()):
             if attribute in ('no_flags', 'all_flags', '__writable_protected_flags_class_attributes__'):
                 regex = re.escape(attribute)
             else:
@@ -648,7 +648,7 @@ class TestFlagsClassMethods(TestCase):
                 delattr(self.MyFlags, attribute)
 
     def test_delattr_fails_with_protected_class_members(self):
-        for attribute in _PROTECTED_FLAGS_CLASS_ATTRIBUTES | set(self.MyFlags.__all_members__.keys()):
+        for attribute in PROTECTED_FLAGS_CLASS_ATTRIBUTES | set(self.MyFlags.__all_members__.keys()):
             with self.assertRaisesRegex(
                     AttributeError, re.escape(r"Can't assign protected attribute '%s'" % attribute)):
                 setattr(self.MyFlags, attribute, 'new_value')
