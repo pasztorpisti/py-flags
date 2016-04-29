@@ -3,10 +3,10 @@ CHANGES
 =======
 
 
-Future version
---------------
+v1.1.0
+------
 
-*Release date: future*
+*Release date: 2016-04-29*
 
 - Extended README.rst with full documentation. Before it contained only a "Quick Overview" section.
 - Added ``Flags.__dotted_single_flag_str__``.
