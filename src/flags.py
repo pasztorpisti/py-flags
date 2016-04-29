@@ -112,9 +112,15 @@ def process_inline_members_definition(members):
     return members
 
 
+def is_member_definition_class_attribute(name, value):
+    """ Returns True if the given class attribute with the specified
+    name and value should be treated as a flag member definition. """
+    return not name.startswith('_') and not is_descriptor(value)
+
+
 def extract_member_definitions_from_class_attributes(class_dict):
-    members = [(name, data) for name, data in class_dict.items()
-               if not name.startswith('_') and not is_descriptor(data)]
+    members = [(name, value) for name, value in class_dict.items()
+               if is_member_definition_class_attribute(name, value)]
     for name, _ in members:
         del class_dict[name]
 
