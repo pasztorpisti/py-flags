@@ -8,6 +8,7 @@ Future version
 
 *Release date: future*
 
+- Extended README.rst with full documentation. Before it contained only a "Quick Overview" section.
 - Added ``Flags.__dotted_single_flag_str__``.
 - The ``Flags.data`` property returns ``UNDEFINED`` for special flags and flag combinations.
 - Added the ``__pickle_int_flags__`` class attribute that can be set to ``True`` in order to force pickle to save
