@@ -765,4 +765,4 @@ Efficiency
 
 A flag object has only a single instance attribute that stores an integer (flags).
 The storage of this instance attribute is optimized using ``__slots__``. Your flags classes aren't allowed to add
-or use instance variables and you can not define ``__slots__``. Trying to do so results in an error.
+or use instance variables and you can not define ``__slots__``. Trying to do so results in error.
