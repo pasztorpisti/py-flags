@@ -631,6 +631,10 @@ class TestFlagsClassMethods(TestCase):
         with self.assertRaisesRegex(TypeError, r"does not support item assignment"):
             self.MyFlags['f0'] = 'whatever'
 
+    def test_bool(self):
+        self.assertTrue(Flags)
+        self.assertTrue(self.MyFlags)
+
     def test_len(self):
         self.assertEqual(len(self.MyFlags), 3)
 

@@ -396,6 +396,9 @@ class FlagsMeta(type):
     def __reversed__(cls):
         return reversed(list(cls.__members_without_aliases__.values()))
 
+    def __bool__(cls):
+        return True
+
     def __len__(cls):
         return len(cls.__members_without_aliases__)
 
