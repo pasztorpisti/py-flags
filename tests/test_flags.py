@@ -636,6 +636,7 @@ class TestFlagsClassMethods(TestCase):
         self.assertTrue(self.MyFlags)
 
     def test_len(self):
+        self.assertEqual(len(Flags), 0)
         self.assertEqual(len(self.MyFlags), 3)
 
     def test_repr(self):

@@ -400,7 +400,8 @@ class FlagsMeta(type):
         return True
 
     def __len__(cls):
-        return len(cls.__members_without_aliases__)
+        members = getattr(cls, '__members_without_aliases__', ())
+        return len(members)
 
     def flag_attribute_value_to_bits_and_data(cls, name, value):
         if value is UNDEFINED:
