@@ -8,6 +8,12 @@ Future version
 
 *Release date: future*
 
+
+v1.1.2
+------
+
+*Release date: 2016-12-13*
+
 - Fix: `len()` of abstract flags classes caused the following exception:
   ``AttributeError: type object 'Flags' has no attribute '__all_members__'``
 
