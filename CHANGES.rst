@@ -8,9 +8,16 @@ Future version
 
 *Release date: future*
 
+
+v1.1.1
+------
+
+*Release date: 2016-12-13*
+
 - Fix: added the ``@unique`` and ``@unique_bits`` decorators to the ``__all__`` list of the flags module.
 - Fix: testing abstract flags classes for truth value caused the following exception:
   ``AttributeError: type object 'Flags' has no attribute '__all_members__'``
+
 
 v1.1.0
 ------
