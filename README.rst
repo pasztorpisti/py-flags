@@ -37,6 +37,9 @@ Type-safe (bit)flags
 
 .. note::
 
+    Python 3.6+ users should consider using the ``Flag`` and ``IntFlag`` classes of the standard ``enum`` module.
+    Those are very similar to the ``flags.Flags`` class of this repo.
+
     It's enough to read only the short Installation_ and `Quick Overview`_ sections to start using this module.
     The rest is about details.
 
