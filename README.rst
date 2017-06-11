@@ -10,7 +10,7 @@ Type-safe (bit)flags
     :target: https://travis-ci.org/pasztorpisti/py-flags
     :alt: build
 
-.. image:: https://img.shields.io/codacy/0c56231fea3a49b48bc39d0803ec3c21/master.svg?style=flat
+.. image:: https://img.shields.io/codacy/6a7d15a84f524e98943678875d2f0dd8/master.svg?style=flat
     :target: https://www.codacy.com/app/pasztorpisti/py-flags
     :alt: code quality
 

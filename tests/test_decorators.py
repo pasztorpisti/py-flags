@@ -65,9 +65,9 @@ class TestUniqueBitsDecorator(TestCase):
                 f2 = 3
 
         with self.assertRaisesRegex(ValueError,
-                                    r"<flags MyFlags>: '\w+' and '\w+' have overlapping bits"):
+                                    r"<flags MyFlags2>: '\w+' and '\w+' have overlapping bits"):
             @unique_bits
-            class MyFlags(Flags):
+            class MyFlags2(Flags):
                 f0 = 1
                 f1 = 2
                 f2 = 5

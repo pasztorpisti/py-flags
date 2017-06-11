@@ -268,7 +268,7 @@ class TestFlagsDeclarationErrors(TestCase):
                 f2 = 1, None
 
         with self.assertRaisesRegex(ValueError, re.escape(r"You aren't allowed to associate data with alias 'f2'")):
-            class MyFlags(Flags):
+            class MyFlags2(Flags):
                 f0 = 1
                 f2 = 1, 'data'
 
