@@ -363,7 +363,7 @@ class FlagsMeta(type):
         return super().__call__(bits)
 
     @classmethod
-    def __prepare__(cls, class_name, bases):
+    def __prepare__(mcs, class_name, bases):
         return collections.OrderedDict()
 
     def __delattr__(cls, name):
