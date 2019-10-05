@@ -45,6 +45,7 @@ def unique_bits(flags_class):
                     raise ValueError("%r: '%s' and '%s' have overlapping bits" % (flags_class, other_name, name))
         else:
             other_bits |= bits
+    return flags_class
 
 
 def is_descriptor(obj):

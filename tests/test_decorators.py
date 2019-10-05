@@ -14,6 +14,10 @@ class TestUniqueDecorator(TestCase):
             f3 = 8
             f4 = f2 | f3
 
+        # make sure that the flags still work after decorating
+        self.assertEqual(int(MyFlags.f0 | MyFlags.f2), 5)
+        self.assertEqual(int(MyFlags.f0 & MyFlags.f2), 0)
+
     def test_with_duplicates(self):
         with self.assertRaisesRegex(ValueError,
                                     re.escape(r"duplicate values found in <flags MyFlags>: f1 -> f0, f4 -> f2")):
@@ -54,6 +58,10 @@ class TestUniqueBitsDecorator(TestCase):
             f1 = 2
             f2 = 4
             f3 = 8
+
+        # make sure that the flags still work after decorating
+        self.assertEqual(int(MyFlags.f0 | MyFlags.f2), 5)
+        self.assertEqual(int(MyFlags.f0 & MyFlags.f2), 0)
 
     def test_with_overlapping_bits(self):
         with self.assertRaisesRegex(ValueError,
