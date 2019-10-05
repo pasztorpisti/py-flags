@@ -3,10 +3,12 @@ CHANGES
 =======
 
 
-Future version
---------------
+v1.1.3
+------
 
-*Release date: future*
+*Release date: 2019-10-05*
+
+- Fix: ``@unique_bits`` had a trivial but fatal bug: it turned classes to ``None``.
 
 
 v1.1.2
