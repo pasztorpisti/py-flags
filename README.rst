@@ -10,13 +10,9 @@ Type-safe (bit)flags
     :target: https://travis-ci.org/pasztorpisti/py-flags
     :alt: build
 
-.. image:: https://img.shields.io/codacy/6a7d15a84f524e98943678875d2f0dd8/master.svg?style=flat
+.. image:: https://img.shields.io/codacy/grade/6a7d15a84f524e98943678875d2f0dd8/master.svg?style=flat
     :target: https://www.codacy.com/app/pasztorpisti/py-flags
     :alt: code quality
-
-.. image:: https://landscape.io/github/pasztorpisti/py-flags/master/landscape.svg?style=flat
-    :target: https://landscape.io/github/pasztorpisti/py-flags/master
-    :alt: code health
 
 .. image:: https://img.shields.io/coveralls/pasztorpisti/py-flags/master.svg?style=flat
     :target: https://coveralls.io/r/pasztorpisti/py-flags?branch=master
