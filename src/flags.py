@@ -3,6 +3,8 @@ import collections
 import functools
 import pickle
 
+from collections.abc import Iterable, Mapping, Set
+
 from dictionaries import ReadonlyDictProxy
 
 __all__ = ['Flags', 'FlagsMeta', 'FlagData', 'UNDEFINED', 'unique', 'unique_bits']
@@ -105,10 +107,10 @@ def process_inline_members_definition(members):
     """
     if isinstance(members, str):
         members = ((name, UNDEFINED) for name in members.replace(',', ' ').split())
-    elif isinstance(members, (tuple, list, collections.Set)):
+    elif isinstance(members, (tuple, list, Set)):
         if members and isinstance(next(iter(members)), str):
             members = ((name, UNDEFINED) for name in members)
-    elif isinstance(members, collections.Mapping):
+    elif isinstance(members, Mapping):
         members = members.items()
     return members
 
@@ -411,7 +413,7 @@ class FlagsMeta(type):
             return UNDEFINED, value
         elif is_valid_bits_value(value):
             return value, UNDEFINED
-        elif isinstance(value, collections.Iterable):
+        elif isinstance(value, Iterable):
             arr = tuple(value)
             if len(arr) == 0:
                 return UNDEFINED, UNDEFINED
